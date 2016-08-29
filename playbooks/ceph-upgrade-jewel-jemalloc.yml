@@ -1,0 +1,120 @@
+---
+# check before upgrade
+- hosts: ceph_monitors:ceph_osds:controler:compute
+  tasks:
+    - name: make sure current version is larger or equal hammer
+      command: test `ceph --version |awk '{print $3}'` \> 0.94 && test `ceph --version |awk '{print $3}'` \< 11
+    - name: make sure ceph health ok
+      command: ceph -s
+      register: result
+      failed_when: "'HEALTH_OK' not in result.stdout"
+      run_once: true
+      delegate_to:  "{{ groups['ceph_monitors'][0] }}"
+# Upgrade ceph monitors to jewel with jemalloc
+- hosts: ceph_monitors
+  tasks:
+    - role: apt-repos
+      repos:
+        - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
+          key_url: '{{ apt_repos.ceph.key_url }}'
+    - apt: name=ceph=10.2.2-1 update_cache=yes
+
+# restart ceph monitors with one concurrency incase of failure
+- hosts: ceph_monitors
+  serial: 1
+  tasks:
+    - name: suppress warn of tunable profile
+      replace: dest=/etc/ceph/ceph.conf regexp="[mon]\n  mon osd down out interval"
+               replace="[mon]\n  mon warn on legacy crush tunables = false\n  mon osd down out interval"
+    - name: make sure mon warn config exists
+      command: cat /etc/ceph/ceph.conf |grep "mon warn on legacy crush tunables = false"
+    - name: stop ceph daemon
+      service: name=ceph-all state=stopped
+    - name: correct ceph dir owner
+      file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
+    - name: start ceph daemon
+      service: name=ceph-all state=started enabled=yes
+    - name: make sure all monitors are up
+      command: ceph mon stat
+      register: result
+      until: "'quorum 0,1,2 cpm1,cpm2,cpm3' not in result.stdout"
+      retries: 5
+      delay: 5
+
+# Upgrade ceph osd to jewel with jemalloc
+- hosts: ceph_osds
+  tasks:
+    - role: apt-repos
+      repos:
+        - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
+          key_url: '{{ apt_repos.ceph.key_url }}'
+    - apt: name=ceph=10.2.2-1 update_cache=yes
+    
+- hosts: ceph_osds
+  serial: 1
+  tasks:
+    - name: make sure ceph health ok
+      command: ceph -s
+      register: result
+      failed_when: "'HEALTH_OK' not in result.stdout"
+      run_once: true
+      delegate_to:  "{{ groups['ceph_monitors'][0] }}"
+    - name: set osd noout
+      command: ceph osd set noout
+      delegate_to: "{{ groups['ceph_monitors'][0] }}"
+      when: inventory_hostname == groups['ceph_osds'][0]
+    - name: stop ceph daemon
+      service: name=ceph-all state=stopped
+    # may need to link journal anew
+    - name: correct ceph dir owner
+      file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
+    # need to make sure ceph osd service is running, if the service module can't gurantee this
+    # another task should be added to gurantee this
+    - name: start ceph daemon
+      service: name=ceph-all state=started enabled=yes
+    # Unset the osd values only after ceph on last osd node has restarted
+    - name: unset osd noout
+      command: ceph osd unset noout
+      delegate_to: "{{ groups['ceph_monitors'][0] }}"
+      when: inventory_hostname == groups['ceph_osds'][-1]
+
+# Upgrade ceph clients to jewel with jemalloc
+- hosts: controller:compute
+  tasks:
+    - role: apt-repos
+      repos:
+        - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
+          key_url: '{{ apt_repos.ceph.key_url }}'
+    - apt: name=ceph=10.2.2-1 update_cache=yes
+- hosts: controller
+  tasks:
+    - file:
+        path: /opt/openstack/current/{{ item.server }}/lib/python2.7/site-packages/{{ item.module }}
+        state: absent
+      with_items:
+        - {server: cinder, module: rados.py}
+        - {server: cinder, module: rados.pyc}
+        - {server: cinder, module: rbd.py}
+        - {server: cinder, module: rbd.pyc}
+        - {server: glance, module: rados.py}
+        - {server: glance, module: rados.pyc}
+        - {server: glance, module: rbd.py}
+        - {server: glance, module: rbd.pyc}
+    - file:
+        src: /usr/lib/python2.7/dist-packages/{{ item }}
+        dest: /opt/openstack/current/{{ item.server }}/lib/python2.7/site-packages/{{ item.module }}
+        state: link
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - {server: cinder, module: rados.so}
+        - {server: cinder, module: rbd.so}
+        - {server: glance, module: rados.so}
+        - {server: glance, module: rbd.so}
+    - service: name="{{ item }}" state=restarted
+      with_items:
+        - cinder-api
+        - cinder-backup
+        - cinder-scheduler
+        - cinder-volume
