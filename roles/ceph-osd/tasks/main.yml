@@ -49,7 +49,7 @@
   when: ceph.bcache_ssd_device is defined
 
 - name: start and add the osd service(s) to the init sequence
-  service: name=ceph
+  service: name=ceph-osd-all
            state=started
            enabled=yes
 

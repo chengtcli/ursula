@@ -78,6 +78,12 @@ def main():
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         os.remove('/var/lib/ceph/osd/ceph-' + osd_id + '/journal')
+        
+        cmd = ['chown', 'ceph:ceph', '/dev/' + ssd_device + str(partition_index)]
+        rc, out, err = module.run_command(cmd, check_rc=True)
+        
+        cmd = ['sgdisk', '-t', str(partition_index) + ':45b0969e-9b03-4f30-b4c6-b4b80ceff106', '/dev/' + ssd_device]
+        rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['ln', '-s', '/dev/' + ssd_device + str(partition_index), '/var/lib/ceph/osd/ceph-' + osd_id + '/journal']
         rc, out, err = module.run_command(cmd, check_rc=True)

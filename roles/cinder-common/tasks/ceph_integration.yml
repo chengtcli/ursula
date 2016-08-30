@@ -1,21 +1,21 @@
 ---
-- name: fetch rados.py
-  get_url:
-    url: "{{ ceph.rados_url }}"
-    dest: /opt/openstack/current/cinder/lib/python2.7/site-packages/rados.py
+- name: import rados module into cinder
+  file:
+    src: /usr/lib/python2.7/dist-packages/rados.so
+    dest: /opt/openstack/current/cinder/lib/python2.7/site-packages/rados.so
+    state: link
     owner: root
     group: root
     mode: 0644
-    timeout: 30
 
-- name: fetch rbd.py
-  get_url:
-    url: "{{ ceph.rbd_url }}"
-    dest: /opt/openstack/current/cinder/lib/python2.7/site-packages/rbd.py
+- name: import rbd module into cinder
+  file:
+    src: /usr/lib/python2.7/dist-packages/rbd.so
+    dest: /opt/openstack/current/cinder/lib/python2.7/site-packages/rbd.so
+    state: link
     owner: root
     group: root
     mode: 0644
-    timeout: 30
 
 - name: fetch cinder keyring
   slurp: path=/etc/ceph/ceph.client.cinder.keyring

@@ -3,7 +3,7 @@
 - hosts: ceph_monitors:ceph_osds:controler:compute
   tasks:
     - name: make sure current version is larger or equal hammer
-      command: test `ceph --version |awk '{print $3}'` \> 0.94 && test `ceph --version |awk '{print $3}'` \< 11
+      command: test `ceph --version |awk '{print $3}'` \> 0.94.3 && test `ceph --version |awk '{print $3}'` \< 11
     - name: make sure ceph health ok
       command: ceph -s
       register: result
@@ -29,15 +29,18 @@
     - name: make sure mon warn config exists
       command: cat /etc/ceph/ceph.conf |grep "mon warn on legacy crush tunables = false"
     - name: stop ceph daemon
-      service: name=ceph-all state=stopped
+      service: name=ceph-mon state=stopped args=id={{ ansible_hostname }}
     - name: correct ceph dir owner
       file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
-    - name: start ceph daemon
-      service: name=ceph-all state=started enabled=yes
+    - name: ensure ceph-mon service enabled and started
+      service: name=ceph-mon
+               state=started
+               enabled=yes
+               args=id={{ ansible_hostname }}
     - name: make sure all monitors are up
-      command: ceph mon stat
+      command: ceph -s
       register: result
-      until: "'quorum 0,1,2 cpm1,cpm2,cpm3' not in result.stdout"
+      until: "'mons down' not in result.stdout"
       retries: 5
       delay: 5
 
@@ -49,7 +52,7 @@
         - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
           key_url: '{{ apt_repos.ceph.key_url }}'
     - apt: name=ceph=10.2.2-1 update_cache=yes
-    
+
 - hosts: ceph_osds
   serial: 1
   tasks:
@@ -64,14 +67,20 @@
       delegate_to: "{{ groups['ceph_monitors'][0] }}"
       when: inventory_hostname == groups['ceph_osds'][0]
     - name: stop ceph daemon
-      service: name=ceph-all state=stopped
-    # may need to link journal anew
+      service: name=ceph-osd-all state=stopped
+    - name: set journal disk guid
+      command: sgdisk -t {{ item }}:45b0969e-9b03-4f30-b4c6-b4b80ceff106 /dev/{{ ceph.bcache_ssd_device }}
+      with_sequence: start=1 end=6
+    # this must be before correct ceph dir owner
+    - name: correct journal partition owner
+      file: path=/dev/{{ ceph.bcache_ssd_device }}{{ item }} owner=ceph group=ceph
+      with_sequence: start=1 end=6
     - name: correct ceph dir owner
       file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
     # need to make sure ceph osd service is running, if the service module can't gurantee this
     # another task should be added to gurantee this
     - name: start ceph daemon
-      service: name=ceph-all state=started enabled=yes
+      service: name=ceph-osd-all state=started enabled=yes
     # Unset the osd values only after ceph on last osd node has restarted
     - name: unset osd noout
       command: ceph osd unset noout
