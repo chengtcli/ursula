@@ -17,7 +17,7 @@
 
 # need this task if ceph-disk prepare doesn't set guid of journal partitions
 #- name: set journal guid
-#  command: sgdisk -t {{ item }}:45b0969e-9b03-4f30-b4c6-b4b80ceff106  /dev/{{ item.1 }}2
+#  command: sgdisk -t 2:45b0969e-9b03-4f30-b4c6-b4b80ceff106  /dev/{{ item.1 }}
 #  with_together:
 #    - ceph_partitions.results
 #    - ceph.disks

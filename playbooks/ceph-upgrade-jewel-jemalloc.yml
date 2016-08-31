@@ -1,22 +1,27 @@
 ---
 # check before upgrade
-- hosts: ceph_monitors:ceph_osds:controler:compute
+- hosts: ceph_monitors:ceph_osds:controller:compute
+  any_errors_fatal: true
   tasks:
     - name: make sure current version is larger or equal hammer
-      command: test `ceph --version |awk '{print $3}'` \> 0.94.3 && test `ceph --version |awk '{print $3}'` \< 11
+      shell: test `ceph --version |awk '{print $3}'` \> 0.94.3 && test `ceph --version |awk '{print $3}'` \< 11
+      changed_when: false
+
     - name: make sure ceph health ok
       command: ceph -s
       register: result
       failed_when: "'HEALTH_OK' not in result.stdout"
+      changed_when: false
       run_once: true
       delegate_to:  "{{ groups['ceph_monitors'][0] }}"
 # Upgrade ceph monitors to jewel with jemalloc
 - hosts: ceph_monitors
-  tasks:
+  roles:
     - role: apt-repos
       repos:
         - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
           key_url: '{{ apt_repos.ceph.key_url }}'
+  tasks:
     - apt: name=ceph=10.2.2-1 update_cache=yes
 
 # restart ceph monitors with one concurrency incase of failure
@@ -24,19 +29,25 @@
   serial: 1
   tasks:
     - name: suppress warn of tunable profile
-      replace: dest=/etc/ceph/ceph.conf regexp="[mon]\n  mon osd down out interval"
+      replace: dest=/etc/ceph/ceph.conf regexp="\[mon\]\n  mon osd down out interval"
                replace="[mon]\n  mon warn on legacy crush tunables = false\n  mon osd down out interval"
+
     - name: make sure mon warn config exists
-      command: cat /etc/ceph/ceph.conf |grep "mon warn on legacy crush tunables = false"
+      shell: cat /etc/ceph/ceph.conf |grep "mon warn on legacy crush tunables = false"
+      changed_when: false
+
     - name: stop ceph daemon
       service: name=ceph-mon state=stopped args=id={{ ansible_hostname }}
+
     - name: correct ceph dir owner
       file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
+
     - name: ensure ceph-mon service enabled and started
       service: name=ceph-mon
                state=started
                enabled=yes
                args=id={{ ansible_hostname }}
+
     - name: make sure all monitors are up
       command: ceph -s
       register: result
@@ -46,41 +57,57 @@
 
 # Upgrade ceph osd to jewel with jemalloc
 - hosts: ceph_osds
-  tasks:
+  roles:
     - role: apt-repos
       repos:
         - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
           key_url: '{{ apt_repos.ceph.key_url }}'
+  tasks:
     - apt: name=ceph=10.2.2-1 update_cache=yes
 
 - hosts: ceph_osds
   serial: 1
   tasks:
-    - name: make sure ceph health ok
-      command: ceph -s
-      register: result
-      failed_when: "'HEALTH_OK' not in result.stdout"
-      run_once: true
-      delegate_to:  "{{ groups['ceph_monitors'][0] }}"
     - name: set osd noout
       command: ceph osd set noout
       delegate_to: "{{ groups['ceph_monitors'][0] }}"
       when: inventory_hostname == groups['ceph_osds'][0]
+
     - name: stop ceph daemon
       service: name=ceph-osd-all state=stopped
-    - name: set journal disk guid
+
+    - name: set journal partition guid, for bcache env
       command: sgdisk -t {{ item }}:45b0969e-9b03-4f30-b4c6-b4b80ceff106 /dev/{{ ceph.bcache_ssd_device }}
       with_sequence: start=1 end=6
-    # this must be before correct ceph dir owner
-    - name: correct journal partition owner
+      when: ceph.bcache_ssd_device is defined
+
+    - name: correct journal partition owner, for bcache env
       file: path=/dev/{{ ceph.bcache_ssd_device }}{{ item }} owner=ceph group=ceph
       with_sequence: start=1 end=6
+      when: ceph.bcache_ssd_device is defined
+
+    - name: set journal partition guid, for full ssd env
+      command: sgdisk -t 2:45b0969e-9b03-4f30-b4c6-b4b80ceff106 /dev/{{ item }}
+      with_items: "{{ ceph.disks }}"
+      when: ceph.bcache_ssd_device is not defined
+
+    - name: correct journal partition owner, for full ssd env
+      file: path=/dev/{{ item }}2 owner=ceph group=ceph
+      with_items: "{{ ceph.disks }}"
+      when: ceph.bcache_ssd_device is not defined
+
     - name: correct ceph dir owner
       file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
-    # need to make sure ceph osd service is running, if the service module can't gurantee this
-    # another task should be added to gurantee this
+
     - name: start ceph daemon
       service: name=ceph-osd-all state=started enabled=yes
+    # need to make sure ceph osd service is up, the service module can't gurantee this
+    - name: make osds are up
+      command: ceph -s
+      register: result
+      until: "'osds are down' not in result.stdout"
+      retries: 5
+      delay: 5
     # Unset the osd values only after ceph on last osd node has restarted
     - name: unset osd noout
       command: ceph osd unset noout
@@ -89,11 +116,12 @@
 
 # Upgrade ceph clients to jewel with jemalloc
 - hosts: controller:compute
-  tasks:
+  roles:
     - role: apt-repos
       repos:
         - repo: 'deb {{ apt_repos.ceph.repo }}jewel/ {{ ansible_lsb.codename }} main'
           key_url: '{{ apt_repos.ceph.key_url }}'
+  tasks:
     - apt: name=ceph=10.2.2-1 update_cache=yes
 - hosts: controller
   tasks:
@@ -109,8 +137,9 @@
         - {server: glance, module: rados.pyc}
         - {server: glance, module: rbd.py}
         - {server: glance, module: rbd.pyc}
+
     - file:
-        src: /usr/lib/python2.7/dist-packages/{{ item }}
+        src: /usr/lib/python2.7/dist-packages/{{ item.module }}
         dest: /opt/openstack/current/{{ item.server }}/lib/python2.7/site-packages/{{ item.module }}
         state: link
         owner: root
@@ -121,7 +150,7 @@
         - {server: cinder, module: rbd.so}
         - {server: glance, module: rados.so}
         - {server: glance, module: rbd.so}
-    - service: name="{{ item }}" state=restarted
+    - service: name={{ item }} state=restarted
       with_items:
         - cinder-api
         - cinder-backup
