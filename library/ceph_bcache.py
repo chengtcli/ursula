@@ -35,10 +35,12 @@ def main():
         argument_spec=dict(
             disks=dict(type='list',required=True),
             ssd_device=dict(required=True),
+            journal_guid=dict(),
         ),
     )
     disks = module.params.get('disks')
     ssd_device = module.params.get('ssd_device')
+    journal_guid = module.params.get('journal_guid') or '45b0969e-9b03-4f30-b4c6-b4b80ceff106'
     changed = False
     uuids_in_order = [None] * len(disks)
 
@@ -82,7 +84,7 @@ def main():
         cmd = ['chown', 'ceph:ceph', '/dev/' + ssd_device + str(partition_index)]
         rc, out, err = module.run_command(cmd, check_rc=True)
         
-        cmd = ['sgdisk', '-t', str(partition_index) + ':45b0969e-9b03-4f30-b4c6-b4b80ceff106', '/dev/' + ssd_device]
+        cmd = ['sgdisk', '-t', str(partition_index) + ':' + journal_guid, '/dev/' + ssd_device]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['ln', '-s', '/dev/' + ssd_device + str(partition_index), '/var/lib/ceph/osd/ceph-' + osd_id + '/journal']
@@ -95,6 +97,9 @@ def main():
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['ceph-disk', 'activate', '/dev/bcache' + str(bcache_index)]
+        rc, out, err = module.run_command(cmd, check_rc=True)
+
+        cmd = ['chown', '-R', 'ceph:ceph', '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         with open("/etc/fstab", "a") as fstab:

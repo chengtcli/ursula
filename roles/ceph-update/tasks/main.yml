@@ -8,8 +8,26 @@
   delay: 60
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
 
-- name: restart ceph mons
-  service: name=ceph-mon-all state=restarted
+- name: stop ceph mon
+  service: name=ceph-mon-all state=stopped
+  when: "'ceph_monitors' in group_names"
+
+- name: correct ceph dir owner
+  file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
+  when: ceph.upgrade2jewel|bool and "ceph_monitors" in group_names
+
+- name: start ceph mons
+  service: name=ceph-mon-all state=started enabled=yes
+  when: "'ceph_monitors' in group_names"
+
+# make sure ceph mon service is up, the service module can't gurantee this
+- name: make sure ceph mon up
+  shell: test `ls /var/run/ceph/*.asok |wc -l` -eq 1
+  register: result
+  until: result.rc == 0
+  retries: 5
+  delay: 5
+  when: "'ceph_monitors' in group_names"
 
 # Setting noout to prevent cluster from rebalancing after service restart
 - name: set osd noout
@@ -28,8 +46,26 @@
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: inventory_hostname == groups['ceph_osds'][0]
 
-- name: restart ceph osds
-  service: name=ceph-osd-all state=restarted
+- name: stop ceph osd
+  service: name=ceph-osd-all state=stopped
+  when: "'ceph_osds' in group_names"
+
+- name: correct owner of ceph dir and journal partitions
+  include: ceph_owner.yml
+  when: ceph.upgrade2jewel|bool and 'ceph_osds' in group_names
+
+- name: start ceph osds
+  service: name=ceph-osd-all state=started enabled=yes
+  when: "'ceph_osds' in group_names"
+
+# make sure ceph osd services are up, the service module can't gurantee this
+- name: make sure ceph osds are up
+  shell: test `ls /var/run/ceph/*.asok |wc -l` -eq 6
+  register: result
+  until: result.rc == 0
+  retries: 5
+  delay: 5
+  when: "'ceph_osds' in group_names"
 
 # Unset the osd values only after ceph on last osd node has restarted
 - name: unset osd noout
@@ -46,3 +82,12 @@
   command: ceph osd unset nodeep-scrub
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: inventory_hostname == groups['ceph_osds'][-1]
+
+- name: restart cinder services
+  service: name="{{ item }}" state=restarted
+  with_items:
+    - cinder-api
+    - cinder-scheduler
+    - cinder-volume
+    - cinder-backup
+  when: ceph.upgrade2jewel|bool and 'controller' in group_names

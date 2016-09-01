@@ -28,8 +28,8 @@
   retries: 5
 
 - name: install ceph
-  apt: pkg={{ item }}={{ ceph.version_number }}
-       state=present
+  apt: pkg={{ item }}
+       state=latest
   with_items: "{{ ceph.ceph_pkgs }}"
   register: result
   until: result|succeeded

@@ -82,6 +82,3 @@
   ceph_bcache:
     disks: "{{ ceph.disks }}"
     ssd_device: "{{ ceph.bcache_ssd_device }}"
-
-- name: correct ceph dir owner
-  file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
