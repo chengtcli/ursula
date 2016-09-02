@@ -1,0 +1,64 @@
+---
+# we shouldn't initial flag again for the case that one node is in multi groups
+- name: initial upgrade flags
+  set_fact:
+    upgrade_ceph: false
+    upgrade_ceph2jewel: false
+  when: upgrade_ceph is undefined
+
+- name: get installed ceph version
+  shell: ceph --version |grep -oP "\d+\.\d+\.?\d{0,3}"
+  changed_when: false
+  ignore_errors: yes
+  register: result_ceph_installed_version
+
+- name: get running ceph version
+  shell: ceph daemon `ls /var/run/ceph/*.asok | head -n1` version |grep -oP "\d+\.\d+\.?\d{0,3}"
+  changed_when: false
+  ignore_errors: yes
+  register: result_ceph_running_version
+  when: result_ceph_installed_version.rc == 0 and ( 'ceph_monitors' in group_names or 'ceph_osds' in group_names )
+
+# set flag=true if ceph is installed but not running
+- name: set upgrade flag true
+  set_fact:
+    upgrade_ceph: true
+    upgrade_ceph2jewel: true
+  when: result_ceph_running_version is defined and result_ceph_running_version.rc != 0
+
+- name: test hammer running
+  shell: test {{ result_ceph_running_version.stdout }} \< 10
+  changed_when: false
+  ignore_errors: yes
+  register: result_running_hammer
+  when: result_ceph_running_version is defined and result_ceph_running_version.rc == 0
+
+- name: set upgrade_ceph2jewel=true
+  set_fact:
+    upgrade_ceph: true
+    upgrade_ceph2jewel: true
+  when: result_running_hammer is defined and result_running_hammer.rc == 0
+
+- name: test upgrade insatllation
+  shell: test {{ ceph_running_version.stdout }} \< {{ ceph.version }}
+  changed_when: false
+  ignore_errors: yes
+  register: result_upgrade
+  when: result_running_hammer is defined and result_running_hammer.rc != 0
+
+- name: set upgrade_ceph=true
+  set_fact:
+    upgrade_ceph: true
+  when: result_upgrade is defined and result_upgrade.rc == 0
+
+- name: test ceph upgrade on controller nodes
+  shell: test {{ result_ceph_installed_version.stdout }} \< {{ ceph.version }}
+  changed_when: false
+  ignore_errors: yes
+  register: result_upgrade_ceph_controller
+  when: result_ceph_installed_version.rc == 0 and ('controller' in group_names or 'cinder_volume' in group_names)
+
+- name: set upgrade_ceph=true for controller nodes
+  set_fact:
+    upgrade_ceph: true
+  when: result_upgrade_ceph_controller is defined and result_upgrade_ceph_controller.rc == 0

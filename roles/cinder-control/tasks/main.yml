@@ -31,7 +31,7 @@
   changed_when: True
   notify: restart cinder services
   when: code_has_changed | default('False') | bool and
-        upgrade | default('False') | bool
+        (upgrade | default('False') | bool or upgrade_ceph | bool)
 
 - meta: flush_handlers
 
