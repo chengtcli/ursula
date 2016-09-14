@@ -57,6 +57,12 @@
       changed_when: false
 
   tasks:
+  - name: set permission for ceph user
+    command: ceph auth caps client.{{ item }} mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx'
+    with_items:
+      - cinder
+      - glance
+
   - name: gather facts for adjusting cinder service host
     command: grep '^host \?= \?ceph' /etc/cinder/cinder.conf
     failed_when: false
