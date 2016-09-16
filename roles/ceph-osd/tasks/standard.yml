@@ -53,6 +53,7 @@
 - name: create openstack pool
   ceph_pool:
     pool_name: "{{ ssd_pool }}"
+    osds: "{{ groups['ceph_osds_ssd']|length * ceph.disks|length }}"
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: inventory_hostname == groups['ceph_osds_ssd'][-1]
 

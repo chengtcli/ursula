@@ -108,7 +108,7 @@
   ceph_bcache:
     disks: "{{ ceph.disks }}"
     ssd_device: "{{ ceph.bcache_ssd_device }}"
-    journal_guid: 45b0969e-9b03-4f30-b4c6-b4b80ceff106
+    journal_guid: "{{ ceph.journal_guid }}"
   when: ok_to_deploy
 
 # pool pg number is based on osd amount
@@ -116,6 +116,7 @@
 - name: create openstack pool
   ceph_pool:
     pool_name: "{{ hybrid_pool }}"
+    osds: "{{ groups['ceph_osds_hybrid']|length * ceph.disks|length }}"
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: inventory_hostname == groups['ceph_osds_hybrid'][-1]
 

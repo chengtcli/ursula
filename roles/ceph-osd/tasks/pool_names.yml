@@ -22,7 +22,9 @@
 - name: get first osd type
   shell: ceph osd tree |sort -rn -k1 |grep -m1  -oP "(?<=host )\w+"
   register: result_first_osd_host
-  when: existing_pools.stdout | search("default") and not existing_pools.stdout | search("(rbd_ssd)|(rbd_hybrid)")
+  when:
+    - existing_pools.stdout | search("default")
+    - not existing_pools.stdout | search("(rbd_ssd)|(rbd_hybrid)")
 
 - name: set ssd_pool=default if ssd is original backend
   set_fact:
@@ -43,13 +45,17 @@
   set_fact:
     ssd_pool:  "rbd_ssd"
     hybrid_pool: "default"
-  when: existing_pools.stdout | search("default") and existing_pools.stdout | search("rbd_ssd")
+  when:
+    - existing_pools.stdout | search("default")
+    - existing_pools.stdout | search("rbd_ssd")
 
 - name: set pool names if default pool and hybrid pool exist
   set_fact:
     hybrid_pool:  "rbd_hybrid"
     ssd_pool: "default"
-  when: existing_pools.stdout | search("default") and existing_pools.stdout | search("rbd_hybrid")
+  when:
+    - existing_pools.stdout | search("default")
+    - existing_pools.stdout | search("rbd_hybrid")
 
 # we may not create both ssd_pool and hybrid
 # but we have to make sure both pool names are defined
@@ -73,12 +79,12 @@
     ssd_ruleset: "ssd_ruleset"
     hybrid_ruleset: "hybrid_ruleset"
 
-- name: set ssd_ruleset name if ssd_pool is defaul
+- name: set ssd_ruleset name if ssd_pool is default
   set_fact:
     ssd_ruleset: "replicated_ruleset"
   when: ssd_pool == "default"
 
-- name: set hybrid_ruleset name if hybrid_pool is defaul
+- name: set hybrid_ruleset name if hybrid_pool is default
   set_fact:
     hybrid_ruleset: "replicated_ruleset"
   when: hybrid_pool == "default"
@@ -107,6 +113,7 @@
   with_items:
     - "{{ groups['controller'] }}"
     - "{{ groups['cinder_volume'] }}"
+    - "{{ groups['compute'] }}"
     - "{{ inventory_hostname }}"
 
 # set default backend, pool
