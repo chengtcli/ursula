@@ -20,4 +20,4 @@
   when: "'ceph_osds_ssd' in group_names"
 
 - name: correct ceph dir owner
-  file: path=/var/lib/ceph state=directory owner=ceph group=ceph recurse=yes
+  script: files/ceph_owner.sh
