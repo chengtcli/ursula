@@ -1,0 +1,18 @@
+---
+# This playbook is used to meet the ursula 3.1.0 upgrade pre-conditions for
+# ceph service. The owner of ceph data files need to be changed in this
+# upgrade, and it's time consuming to change owner of large mount of files.
+# Because large mount of random read IO requests will be issued. This playbook
+# is to pre-read these metadata, so we can change owner fast in the upgrade.
+# This playbook may take tens of minutes.
+- name: do pre-read before upgrade to 3.1 from 3.0
+  hosts: ceph_osds
+  tasks:
+  - name: pre-read metadata of files in /var/lib/ceph
+    shell: |
+      for osd_sub in $(find /var/lib/ceph/osd -maxdepth 3 -mindepth 3)
+      do
+        ls -lR $osd_sub > /dev/null &
+      done
+      wait
+  environment: "{{ env_vars|default({}) }}"
