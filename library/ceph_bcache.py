@@ -58,10 +58,10 @@ def main():
         disk = os.path.join(subdir, uuid)
         path = os.path.realpath(disk)
 
-        if 'bcache' in path:
+        if 'intelcas' in path:
           bcache_index = int(path[len(path)-1:])
-          uuids_in_order.pop(bcache_index)
-          uuids_in_order.insert(bcache_index,uuid)
+          uuids_in_order.pop(bcache_index - 1)
+          uuids_in_order.insert(bcache_index - 1,uuid)
     cmd = ['grep', 'ceph', "/etc/fstab"]
     rc, bcache_fstabs, err = module.run_command(cmd)
     bcache_fstabs = bcache_fstabs.split('\n')
@@ -72,7 +72,7 @@ def main():
       rc, out, err = module.run_command(cmd, check_rc=True)
       osd_id = out.rstrip()
 
-      bcache_index = i
+      bcache_index = i + 1
       partition_index = int(osd_id) % len(disks) + 1
 
       # we configure new journal here if osd dir already exists
@@ -94,7 +94,7 @@ def main():
         os.makedirs('/var/lib/ceph/osd/ceph-' + osd_id)
         changed = True
 
-        cmd = ['mount', '/dev/bcache' + str(bcache_index), '/var/lib/ceph/osd/ceph-' + osd_id]
+        cmd = ['mount', '/dev/intelcas1-' + str(bcache_index), '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['ceph-osd', '-i', osd_id, '--mkfs', '--mkkey', '--osd-uuid', uuids_in_order[i]]
@@ -117,7 +117,7 @@ def main():
         cmd = ['umount', '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
-        cmd = ['ceph-disk', 'activate', '/dev/bcache' + str(bcache_index)]
+        cmd = ['ceph-disk', 'activate', '/dev/intelcas1-' + str(bcache_index)]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['chown', '-R', 'ceph:ceph', '/var/lib/ceph/osd/ceph-' + osd_id]

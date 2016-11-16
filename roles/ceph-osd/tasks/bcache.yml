@@ -51,6 +51,19 @@
 
 # block initial ssd disk
 - block:
+  - name: install pexpect python module
+    pip: name=pexpect
+
+  - name: copy installer of intel cas
+    copy: src=installer-Intel-CAS-03.01.01.10140400-trial.run dest=/tmp/installer-Intel-CAS-03.01.01.10140400-trial.run mode=0555
+
+  - name: install intel cas
+    expect:
+      command: /bin/bash -c "which casadm || /tmp/installer-Intel-CAS-03.01.01.10140400-trial.run"
+      responses:
+        .*--More--\S*: ''
+        .*I have read and accept the license.*: 'y'
+        .*Do you want to continue.*: 'y'
   - name: mklabel gpt
     command: "parted -s /dev/{{ ceph.bcache_ssd_device }} mklabel gpt"
 
@@ -64,75 +77,30 @@
              mkpart bcache {{ ceph.disks|length * 10000 + 1 }}MiB 100%
 
   - name: make-bcache -C <ssd device>
-    command: make-bcache -C /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }}
+    command: casadm --start-cache --cache-device /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }} --cache-mode wb
   when: ceph_init_ssd
 
+- name: make xfs on bcache devices
+  command: mkfs -t xfs -f -i size=2048 -- /dev/{{ item }}
+           creates=/sys/block/{{ item }}/inteldisk*
+  with_items: "{{ ceph.disks }}"
+
 - name: make-bcache -B <sata disks>
-  command: make-bcache -B /dev/{{ item }}
-           creates=/sys/block/{{ item }}/bcache
+  command: casadm --add-core --cache-id 1 --core-device /dev/{{ item }}
+           creates=/sys/block/{{ item }}/inteldisk*
   register: result_bcache_backs
   with_items: "{{ ceph.disks }}"
 
-- name: determine bcache uuid
-  shell: bcache-super-show /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }} |
-         grep cset.uuid | awk '{print $2}'
-  changed_when: false
-  register: bcache_uuid
+- name: wait for bcache directories to be created before running next task
+  wait_for: path=/sys/block/intelcas1-{{ item }} timeout=30
+  with_sequence: "start=1 end={{ ceph.disks|length }}"
 
-# deal with bcache devices when back devices are changed
-- block:
-  - name: udevadm trigger
-    command: "udevadm trigger"
-
-  - name: wait for bcache directories to be created before running next task
-    wait_for: path=/sys/block/bcache{{ item }} timeout=30
-    with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-
-  - name: get changed bcaches
-    shell: grep -oP "bcache\d+" /sys/block/{{ item.item }}/bcache/dev/uevent
-    when: item.changed
-    with_items: "{{ result_bcache_backs.results }}"
-    register: result_cache_nums
-
-  - name: set cache mode to writeback
-    shell: echo writeback > /sys/block/{{ item.stdout }}/bcache/cache_mode
-    when: item.changed
-    with_items: "{{ result_cache_nums.results }}"
-
-  - name: attach to bcache devices
-    shell: echo {{ bcache_uuid.stdout }} > /sys/block/{{ item.stdout }}/bcache/attach
-    when: item.changed
-    with_items: "{{ result_cache_nums.results }}"
-
-  - name: make sure cache tier is ok
-    wait_for: path=/sys/block/{{ item.stdout }}/bcache/cache timeout=10
-    when: item.changed
-    with_items: "{{ result_cache_nums.results }}"
-
-  - name: make xfs on bcache devices
-    command: mkfs -t xfs -f -i size=2048 -- /dev/{{ item.stdout }}
-    when: item.changed
-    with_items: "{{ result_cache_nums.results }}"
-
-  - name: make sure all uuids of bcaches exist
-    shell: test `ls -l /dev/disk/by-uuid/ |grep bcache |wc -l` -eq "{{ ceph.disks|length }}"
-    register: result
-    until: result.rc == 0
-    retries: 6
-    delay: 10
-  when: result_bcache_backs.changed
-
-# deal with bcache devices when ssd disk is changed
-- block:
-  - name: attach to bcache devices
-    shell: echo {{ bcache_uuid.stdout }} > /sys/block/bcache{{ item }}/bcache/attach
-           creates=/sys/block/bcache{{ item }}/bcache/cache
-    with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-
-  - name: make sure cache tier is ok
-    wait_for: path=/sys/block/bcache{{ item }}/bcache/cache timeout=10
-    with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-  when: ceph_init_ssd
+- name: make sure all uuids of bcaches exist
+  shell: test `ls -l /dev/disk/by-uuid/ |grep intelcas |wc -l` -eq "{{ ceph.disks|length }}"
+  register: result
+  until: result.rc == 0
+  retries: 6
+  delay: 10
 
 - name: activate osds
   ceph_bcache:
