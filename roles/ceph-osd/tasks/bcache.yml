@@ -80,20 +80,22 @@
     command: casadm --start-cache --cache-device /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }} --cache-mode wb
   when: ceph_init_ssd
 
-- name: make xfs on bcache devices
-  command: mkfs -t xfs -f -i size=2048 -- /dev/{{ item }}
-           creates=/sys/block/{{ item }}/inteldisk*
-  with_items: "{{ ceph.disks }}"
-
 - name: make-bcache -B <sata disks>
   command: casadm --add-core --cache-id 1 --core-device /dev/{{ item }}
            creates=/sys/block/{{ item }}/inteldisk*
   register: result_bcache_backs
   with_items: "{{ ceph.disks }}"
 
-- name: wait for bcache directories to be created before running next task
-  wait_for: path=/sys/block/intelcas1-{{ item }} timeout=30
-  with_sequence: "start=1 end={{ ceph.disks|length }}"
+- name: get changed intel-cas devices
+  shell: ls /sys/block/{{ item.item }}/inteldisk* | grep -oP "intelcas1-\d+"
+  when: item.changed
+  with_items: "{{ result_bcache_backs.results }}"
+  register: result_cas_devices
+
+- name: make xfs on bcache devices
+  command: mkfs.xfs -i size=2048 -b size=4096 -s size=4096 /dev/{{ item.stdout }}
+  when: item.changed
+  with_items: "{{ result_cas_devices.results }}"
 
 - name: make sure all uuids of bcaches exist
   shell: test `ls -l /dev/disk/by-uuid/ |grep intelcas |wc -l` -eq "{{ ceph.disks|length }}"
