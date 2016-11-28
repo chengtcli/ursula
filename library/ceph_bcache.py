@@ -38,13 +38,15 @@ import os
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            disks=dict(type='list',required=True),
+            disks=dict(type='list', required=True),
             ssd_device=dict(required=True),
+            ceph_init_ssd=dict(type='bool', required=True),
             journal_guid=dict(required=True),
         ),
     )
     disks = module.params.get('disks')
     ssd_device = module.params.get('ssd_device')
+    ceph_init_ssd = module.params.get('ceph_init_ssd')
     journal_guid = module.params.get('journal_guid')
     changed = False
     uuids_in_order = [None] * len(disks)
@@ -60,13 +62,31 @@ def main():
           bcache_index = int(path[len(path)-1:])
           uuids_in_order.pop(bcache_index)
           uuids_in_order.insert(bcache_index,uuid)
+    cmd = ['grep', 'ceph', "/etc/fstab"]
+    rc, bcache_fstabs, err = module.run_command(cmd)
+    bcache_fstabs = bcache_fstabs.split('\n')
 
     for i in range(0, len(uuids_in_order)):
-
       # running this command with the uuid argument will return the same value each time
       cmd = ['ceph', 'osd', 'create', uuids_in_order[i]]
       rc, out, err = module.run_command(cmd, check_rc=True)
       osd_id = out.rstrip()
+
+      bcache_index = i
+      partition_index = int(osd_id) % len(disks) + 1
+
+      # we configure new journal here if osd dir already exists
+      if os.path.exists('/var/lib/ceph/osd/ceph-' + osd_id) and ceph_init_ssd:
+        cmd = ['chown', 'ceph:ceph',
+               '/dev/' + ssd_device + str(partition_index)]
+        rc, out, err = module.run_command(cmd, check_rc=True)
+
+        cmd = ['sgdisk', '-t', str(partition_index) + ':' + journal_guid,
+               '/dev/' + ssd_device]
+        rc, out, err = module.run_command(cmd, check_rc=True)
+
+        cmd = ['ceph-osd', '-i', osd_id, '--mkjournal']
+        rc, out, err = module.run_command(cmd, check_rc=True)
 
       # if first time running 'ceph osd create' against this uuid, create the osd dir
       # and handle rest of activation. if directory exists, the device has already
@@ -74,9 +94,6 @@ def main():
       if not os.path.exists('/var/lib/ceph/osd/ceph-' + osd_id):
         os.makedirs('/var/lib/ceph/osd/ceph-' + osd_id)
         changed = True
-
-        bcache_index = int(osd_id) % len(disks)
-        partition_index = bcache_index + 1
 
         cmd = ['mount', '/dev/bcache' + str(bcache_index), '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
@@ -107,8 +124,19 @@ def main():
         cmd = ['chown', '-R', 'ceph:ceph', '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
-        with open("/etc/fstab", "a") as fstab:
-          fstab.write('UUID=' + uuids_in_order[i] + ' /var/lib/ceph/osd/ceph-' + osd_id + ' xfs defaults,noatime,largeio,inode64,swalloc 0 0\n')
+        bcache_fstabs.append('UUID=%(uuid)s /var/lib/ceph/osd/ceph-%(osd_id)s'
+                             ' xfs defaults,noatime,largeio,inode64,swalloc '
+                             '0 0' % {'uuid': uuids_in_order[i],
+                                      'osd_id': osd_id})
+
+    if changed:
+      cmd = ['sed', '-i', '/ceph/d', '/etc/fstab']
+      rc, out, err = module.run_command(cmd, check_rc=True)
+      # add available mount items
+      with open("/etc/fstab", "a") as fstab:
+        for mount_item in filter(None, bcache_fstabs):
+          if any([ uuid in mount_item for uuid in uuids_in_order]):
+            fstab.write(mount_item + '\n') 
 
     module.exit_json(changed=changed)
 
