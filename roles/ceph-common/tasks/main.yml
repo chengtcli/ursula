@@ -1,4 +1,26 @@
 ---
+# ceph-centos-test
+- block:
+    - name: add my yum repo
+      yum_repository:
+        name: my-test-yum-repo
+        description: my-test-yum-repo
+        baseurl: http://169.44.130.106/myrepo/
+        gpgcheck: no
+        state: present
+
+    - name: Add Some repo
+      yum_repository:
+        name: ceph
+        description: ceph repo
+        baseurl: https://download.ceph.com/rpm-jewel/el7/$basearch
+        gpgkey: https://download.ceph.com/keys/release.asc
+        gpgcheck: yes
+
+    - name: yum update for systemd
+      shell: yum update -y
+  when: ansible_os_family == 'RedHat'
+
 # run once for each host
 - include: upgrade_flags.yml
   when: ceph_upgrade_flag_done is undefined
@@ -23,22 +45,29 @@
       permission: r
 
 - name: install dependencies
-  apt: pkg={{ item }}
-       state=present
-       update_cache=yes
-       cache_valid_time=3600
-  with_items: "{{ ceph.debian_pkgs }}"
+  package: name={{ item }} state=present
+  with_items: "{{ ceph.depend_pkgs }}"
   register: result
   until: result|succeeded
   retries: 5
 
-- name: install ceph
+- name: install ceph(debian)
   apt: pkg={{ item }}={{ ceph.version }}
        state=present
   with_items: "{{ ceph.ceph_pkgs }}"
   register: result
   until: result|succeeded
   retries: 5
+  when: ansible_os_family == 'Debian'
+
+- name: install ceph(redhat)
+  yum: name={{ item }}-{{ ceph.version }}
+       state=present
+  with_items: "{{ ceph.ceph_pkgs }}"
+  register: result
+  until: result|succeeded
+  retries: 5
+  when: ansible_os_family == 'RedHat'
 
 - name: check for a ceph socket
   shell: "stat /var/run/ceph/*.asok > /dev/null 2>&1"
