@@ -10,7 +10,7 @@
   when: ceph.disks is not defined
 
 - name: install dependencies
-  apt: pkg={{ item }}
+  package: name={{ item }}
        state=present
   with_items: "{{ ceph.osd_pkgs }}"
   register: result
@@ -18,7 +18,7 @@
   retries: 5
 
 - name: install bcache dependencies
-  apt: pkg={{ item }}
+  package: name={{ item }}
        state=present
   with_items: "{{ ceph.bcache_pkgs }}"
   when: "'ceph_osds_hybrid' in group_names"

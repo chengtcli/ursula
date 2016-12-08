@@ -7,8 +7,8 @@ ceph:
   #  - sdc
   #  - sdd
   #bcache_ssd_device: sdg 
-
-  version: 10.2.3~bbc1
+# ceph-centos-test
+  version: 10.2.5
 
   openstack_keys:
     - { name: client.glance, value: "mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx'" }
@@ -17,7 +17,7 @@ ceph:
   journal_guid: 45b0969e-9b03-4f30-b4c6-b4b80ceff106
 
   # Packages
-  debian_pkgs:
+  depend_pkgs:
     - python-pycurl
     - ntp
     - hdparm
@@ -27,7 +27,7 @@ ceph:
   osd_pkgs:
     - parted
   bcache_pkgs:
-    - bcache-tools
+      - bcache-tools
 
   # Ceph options
   cephx: true

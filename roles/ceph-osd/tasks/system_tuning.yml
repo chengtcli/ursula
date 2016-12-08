@@ -4,9 +4,23 @@
   changed_when: false
   failed_when: false
 
-- name: install dependencies
+- name: install dependencies(debian)
   apt: pkg="hugepages"
-  when: ceph.disable_transparent_hugepage
+  when:
+    - ansible_os_family == 'Debian'
+    - ceph.disable_transparent_hugepage
+  register: result
+  until: result|succeeded
+  retries: 5
+
+- name: install dependencies(redhat)
+  package: name={{ item }}
+  with_items:
+    - libhugetlbfs
+    - libhugetlbfs-utils
+  when:
+    - ansible_os_family == 'RedHat'
+    - ceph.disable_transparent_hugepage
   register: result
   until: result|succeeded
   retries: 5
@@ -23,9 +37,17 @@
     backrefs=yes
   when: ceph.disable_transparent_hugepage
 
-- name: update grub config with changes
+- name: update grub config with changes(debian)
   command: update-grub
-  when: ceph.disable_transparent_hugepage
+  when:
+    - ansible_os_family == 'Debian'
+    - ceph.disable_transparent_hugepage
+
+- name: update grub config with changes(redhat)
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when:
+    - ansible_os_family == 'RedHat'
+    - ceph.disable_transparent_hugepage
 
 - name: apply operating system tuning
   sysctl:
