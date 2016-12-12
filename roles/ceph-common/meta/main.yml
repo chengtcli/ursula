@@ -6,8 +6,17 @@ dependencies:
     when: logging.enabled|default(True)|bool
     service: ceph
     logdata: "{{ ceph.logs }}"
-# comment this temporary for ceph-centos-test
-#  - role: apt-repos
-#    repos:
-#      - repo: 'deb {{ apt_repos.ceph.repo }} {{ ansible_lsb.codename }} main'
-#        key_url: '{{ apt_repos.ceph.key_url }}'
+
+  - role: repos
+    repos:
+      - repo: 'deb {{ apt_repos.ceph.repo }} {{ ansible_lsb.codename }} main'
+        key_url: '{{ apt_repos.ceph.key_url }}'
+    when: os == 'ubuntu'
+
+  - role: repos
+    repo: ceph
+    when: os == 'rhel'
+# ceph-centos-test
+  - role: repos
+    repo: epel
+    when: os == 'rhel'

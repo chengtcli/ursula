@@ -9,16 +9,8 @@
         gpgcheck: no
         state: present
 
-    - name: Add Some repo
-      yum_repository:
-        name: ceph
-        description: ceph repo
-        baseurl: https://download.ceph.com/rpm-jewel/el7/$basearch
-        gpgkey: https://download.ceph.com/keys/release.asc
-        gpgcheck: yes
-
     - name: yum update for systemd
-      shell: yum update -y
+      shell: yum update -y systemd
   when: ansible_os_family == 'RedHat'
 
 # run once for each host
