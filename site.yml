@@ -17,7 +17,7 @@
   hosts: all:!vyatta-*
   roles:
     - role: preflight-checks
-      tags: ['always', 'precheck']
+      tags: ['always']
   environment: "{{ env_vars|default({}) }}"
 
 - name: common role for all hosts

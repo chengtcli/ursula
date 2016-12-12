@@ -55,5 +55,5 @@
       - result_cinder_endpoint.rc == 0
 
   when: ceph.enabled | default('False') | bool
-  tags: 'precheck_ceph'
+  tags: ['precheck', 'precheck_ceph']
   run_once: true
