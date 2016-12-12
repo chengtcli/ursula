@@ -4,7 +4,8 @@
     name: "{{ yum_repos[repo].name|default(repo) }}"
     description: "{{ yum_repos[repo].description|default(yum_repos[repo].name)|default(repo) }}"
     baseurl: "{{ yum_repos[repo].repo|default(omit) }}"
-    gpgcheck: "{{ yum_repos[repo].gpgcheck|default(omit) }}"
+    gpgkey: "{{ yum_repos[repo].gpgkey|default(omit) }}"
+    gpgcheck: "{{ yum_repos[repo].gpgcheck|default('yes' if yum_repos[repo].gpgkey is defined else omit) }}"
     state: present
   when: yum_repos[repo].repo|default(None) and repo is defined
   register: result
