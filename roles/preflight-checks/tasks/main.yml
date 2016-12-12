@@ -9,6 +9,10 @@
     os: ubuntu
   when: ansible_distribution in ['Ubuntu']
 
+- name: make sure os is defined
+  fail: msg="We don't support {{ ansible_distribution }} yet. OS should be CentOS, RedHat or Ubuntu."
+  when: os is undefined
+
 - name: set ssh_service fact for ubuntu
   set_fact:
     ssh_service: ssh
