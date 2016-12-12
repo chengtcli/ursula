@@ -56,3 +56,6 @@ yum_repos:
     repo: http://sensu.global.ssl.fastly.net/yum/$basearch/
     description: sensu monitoring repo
     gpgcheck: no
+  ceph:
+    repo: https://download.ceph.com/rpm-jewel/el7/$basearch
+    gpgkey: https://download.ceph.com/keys/release.asc
