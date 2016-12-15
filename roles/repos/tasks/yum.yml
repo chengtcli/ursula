@@ -23,7 +23,6 @@
   rpm_key:
     key: "{{ yum_repos[repo].key_url|default(omit) }}"
     state: present
-  with_items: "{{ repos }}"
   when: yum_repos[repo].key_url|default(None) and repo is defined
   register: result
   until: '"failed" not in result'

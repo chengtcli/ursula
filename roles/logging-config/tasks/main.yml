@@ -1,7 +1,5 @@
----
-- name: logstash-forwarder config directory
-  file: dest=/etc/logstash-forwarder.d state=directory mode=0755
+- include: logstash.yml
+  when: logging.forward_type != 'filebeat'
 
-- name: install log template
-  template: src=etc/logstash-forwarder.d/template.conf dest=/etc/logstash-forwarder.d/{{ service }}.conf
-  notify: restart logstash-forwarder
+- include: filebeat.yml
+  when: logging.forward_type  == 'filebeat'
