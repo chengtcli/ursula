@@ -8,6 +8,7 @@
         baseurl: http://169.44.130.106/myrepo/
         gpgcheck: no
         state: present
+      when: "'ceph_osds_hybrid' in group_names"
 
     - name: yum update for systemd
       shell: yum update -y systemd
@@ -44,7 +45,7 @@
   retries: 5
 
 - name: install ceph(debian)
-  apt: pkg={{ item }}={{ ceph.version }}
+  apt: pkg={{ item }}
        state=present
   with_items: "{{ ceph.ceph_pkgs }}"
   register: result
