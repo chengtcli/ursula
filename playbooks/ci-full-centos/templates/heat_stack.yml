@@ -12,7 +12,7 @@ parameters:
   flavor:
     type: string
     description: Flavor to use for servers
-    default: {{ ansible_env.testenv_flavor | default('m1.large') }}
+    default: {{ ansible_env.testenv_flavor | default('m1.xlarge') }}
   network:
     type: string
     description: Name of Neutron network into which servers get deployed
