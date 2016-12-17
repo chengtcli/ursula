@@ -39,7 +39,9 @@ echo "deleting heat stack to destroy resources including VMs: ${VMS}"
 ${ROOT}/test/cleanup
 
 echo "creating heat template for test env ..."
-ursula --ursula-debug "envs/test" ${ROOT}/playbooks/${TEST_ENV}/tasks/create_heat_template.yml --extra-vars="use_private_ips=${USE_PRIVATE_IPS}"
+if [[ ! -e ${ROOT}/envs/test/heat_stack.yml ]]; then
+  ursula --ursula-debug "envs/test" ${ROOT}/playbooks/${TEST_ENV}/tasks/create_heat_template.yml --extra-vars="use_private_ips=${USE_PRIVATE_IPS}"
+fi
 
 echo "building config"
 rm -rf ${ROOT}/envs/test/group_vars/
