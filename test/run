@@ -24,8 +24,9 @@ if [ "${ACTION}" == "all" -o "${ACTION}" == "deploy" ]; then
 fi
 
 if [ "${ACTION}" == "all" -o "${ACTION}" == "test" ]; then
-  time ursula ${extra_args} "envs/test" ${ROOT}/playbooks/tests/tasks/main.yml -u ${LOGIN_USER} $@
-  ring_bell
+  echo "skipping tests for centos for now"
+#  time ursula ${extra_args} "envs/test" ${ROOT}/playbooks/tests/tasks/main.yml -u ${LOGIN_USER} $@
+#  ring_bell
 fi
 
 if [ "${ACTION}" == "all" -o "${ACTION}" == "rally" ]; then
