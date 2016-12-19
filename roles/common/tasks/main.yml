@@ -20,6 +20,17 @@
     retries: 5
   when: ansible_distribution == "Ubuntu"
 
+- name: Register with RHN
+  redhat_subscription:
+    state: present
+    username: "{{ redhat.user }}"
+    password: "{{ redhat.pass }}"
+  when: ansible_distribution == "RedHat"
+
+- name: add OS respositories
+  command: subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-openstack-10-rpms  --enable=rhel-7-server-rh-common-rpms  --enable=rhel-7-server-openstack-10-tools-rpms --enable=rhel-7-server-openstack-10-optools-rpms --enable=rhel-7-server-openstack-10-tools-debug-rpms --enable=rhel-7-server-rhceph-2-mon-rpms --enable=rhel-7-server-rhceph-2-tools-rpms --enable rhel-7-server-optional-rpms
+  when: ansible_distribution == "RedHat"
+
 - name: secure paths sudoers operations
   lineinfile:
     dest: /etc/sudoers

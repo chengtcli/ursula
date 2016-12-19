@@ -1,7 +1,7 @@
 default:
   memory: 512
   cpus: 1
-  box: centos/7
+  box: rhel7
   box_url: https://atlas.hashicorp.com/centos/7
 
 vms:
