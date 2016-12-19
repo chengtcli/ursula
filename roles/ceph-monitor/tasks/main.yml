@@ -59,15 +59,26 @@
   with_items:
     - done
     - upstart
+  when: ansible_os_family == 'Debian'
 
-- name: ensure ceph-mon service enabled and started
+- name: ensure ceph-mon service enabled and started(debian)
   service: name=ceph-mon
            state=started
            enabled=yes
            args=id={{ ansible_hostname }}
+  when: ansible_os_family == 'Debian'
+
+- name: ensure ceph-mon service enabled and started(redhat)
+  service: name=ceph-mon@{{ ansible_hostname }}
+           state=started
+           enabled=yes
+  when: ansible_os_family == 'RedHat'
 
 - name: wait for client.admin key exists
   wait_for: path=/etc/ceph/ceph.client.admin.keyring
+
+- name: make admin keyring owned by ceph
+  file: path=/etc/ceph/ceph.client.admin.keyring owner=ceph group=ceph
 
 - name: create openstack keys
   command: ceph auth get-or-create {{ item.name }} {{ item.value }}
