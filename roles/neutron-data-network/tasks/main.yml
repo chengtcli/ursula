@@ -25,6 +25,18 @@
     name: iputils
   when: os == 'rhel'
 
+- name: install custom ucarp scripts - rhel
+  template:
+    src: "usr/local/libexec/{{ item }}"
+    dest: "/usr/local/libexec/{{ item }}"
+    owner: root
+    group: root
+    mode: 0700
+  with_items:
+    - ucarp-vip-up
+    - ucarp-vip-down
+  when: ucarp is defined and os == 'rhel'
+
 - name: install packages for l3ha
   package: name=keepalived
   when: neutron.l3ha.enabled|bool

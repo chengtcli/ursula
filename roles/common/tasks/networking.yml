@@ -13,6 +13,24 @@
   with_items: "{{ network_interfaces_d }}"
   tags: ['prereboot']
 
+- name: add neutron ucarp config
+  template:
+    src: etc/ucarp/vip-nnn.conf
+    dest: /etc/ucarp/vip-{{ "%03d" | format(ucarp.vid) }}.conf
+    user: root
+    owner: root
+    mode: 0600
+  when: ucarp is defined and os == 'rhel'
+  tags: ['prereboot']
+
+- name: enable ucarp@{{ ucarp.vid }} service
+# systemd: # Ansible 2.2+ only
+#   name: ucarp@{{ ucarp.vid }}
+#   enabled: yes
+  command: systemctl enable ucarp@{{ ucarp.vid }}
+  when: ucarp is defined and os == 'rhel'
+  tags: ['prereboot']
+
 #Set gateway for each undercloud_cidr subnet. gateway is a member of undercloud_cidr list for every subnet.
 #Each host can belong to only one undercloud_cidr, so there will be only one nw_gw set per host.
 - name: set gateway address for multi subnet
