@@ -23,11 +23,11 @@
   when: ucarp is defined and os == 'rhel'
   tags: ['prereboot']
 
-- name: enable ucarp@{{ ucarp.vid }} service
+- name: enable ucarp@{{ "%03d" | format(ucarp.vid) }} service
 # systemd: # Ansible 2.2+ only
-#   name: ucarp@{{ ucarp.vid }}
+#   name: ucarp@{{ "%03d" | format(ucarp.vid) }}
 #   enabled: yes
-  command: systemctl enable ucarp@{{ ucarp.vid }}
+  command: systemctl enable ucarp@{{ "%03d" | format(ucarp.vid) }}
   when: ucarp is defined and os == 'rhel'
   tags: ['prereboot']
 
