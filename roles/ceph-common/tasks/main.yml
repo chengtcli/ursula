@@ -16,8 +16,7 @@
         description: ceph
         baseurl: https://download.ceph.com/rpm-jewel/el7/$basearch
         gpgkey: https://download.ceph.com/keys/release.asc
-        state: present
-      when: "'ceph_osds_hybrid' in group_names"
+        state: absent
 
     - name: yum update for systemd
       shell: yum update -y systemd

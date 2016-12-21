@@ -8,7 +8,7 @@ ceph:
   #  - sdd
   #bcache_ssd_device: sdg 
 # ceph-centos-test
-  version: 10.2.5
+  version: 10.2.3
 
   openstack_keys:
     - { name: client.glance, value: "mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx'" }
@@ -22,8 +22,8 @@ ceph:
     - ntp
     - hdparm
   ceph_pkgs:
-    - ceph
-    - ceph-common
+    - ceph-osd
+    - ceph-mon
   osd_pkgs:
     - parted
   bcache_pkgs:
