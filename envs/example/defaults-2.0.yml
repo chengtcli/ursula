@@ -215,6 +215,9 @@ cinder:
       control_location: front-end
 
 neutron:
+  advertise_mtu: true
+  path_mtu: 1400
+  global_physnet_mtu: 1500
   plugin: ml2
   bridge_mappings: ''
   network_vlan_ranges: ''

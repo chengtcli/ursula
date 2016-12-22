@@ -102,8 +102,16 @@ resources:
           protocol: icmp
         - ethertype: 'IPv4'
           remote_mode: 'remote_group_id'
-        - ethertype: 'IPv6'
+          protocol: tcp
+        - ethertype: 'IPv4'
           remote_mode: 'remote_group_id'
+          protocol: udp
+        - ethertype: 'IPv4'
+          remote_mode: 'remote_group_id'
+          protocol: igmp
+        - ethertype: IPv4
+          remote_ip_prefix: 192.168.0.0/22
+          protocol: igmp
 
   ssh_keypair:
     type: OS::Nova::KeyPair

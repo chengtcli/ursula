@@ -19,11 +19,22 @@
   until: result|succeeded
   retries: 5
 
+- name: set group membership for nova state_path
+  file:
+    dest: "{{ nova.state_path }}"
+    state: directory
+    owner: nova
+    group: "{{ (os == 'rhel' ) | ternary('qemu', 'nova') }}"
+    mode: 0770
+
+
 - name: nova instances directory
   file:
     dest: "{{ nova.state_path }}/instances"
     state: directory
     owner: nova
+    group: "{{ (os == 'rhel' ) | ternary('qemu', 'nova') }}"
+    mode: 0770
 
 - name: nbd module - ubuntu
   lineinfile: dest=/etc/modules line="nbd"
