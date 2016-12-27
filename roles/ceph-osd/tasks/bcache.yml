@@ -25,6 +25,18 @@
   register: result
   changed_when: result.stdout |search("moved item")
 
+- name: load dm-cache module
+  modprobe: name={{ item }}
+  with_items:
+    - dm_mod
+    - dm_cache
+
+- name: load dm-cache module
+  copy: dest=/etc/modules-load.d/{{ item }} content={{ item }}
+  with_items:
+    - dm_mod
+    - dm_cache
+
 # we check for journal and bcache partitions to skip destructive tasks below
 - name: check if journal partitions exist on ssd device
   shell: "parted --script /dev/{{ ceph.bcache_ssd_device }} print | egrep -sq 'journal'"
@@ -58,54 +70,32 @@
   with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
   when: ok_to_deploy
 
-- name: make bcache partition
+- name: make bcache block partition
   command: parted --script /dev/{{ ceph.bcache_ssd_device }}
            mkpart bcache {{ ceph.disks|length * 10000 + 1 }}MiB 100%
   when: ok_to_deploy
 
-- name: make-bcache -C <ssd device>
-  command: make-bcache -C /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }}
-  ignore_errors: true
-  when: ok_to_deploy
-
-- name: make-bcache -B <sata disks>
-  command: "make-bcache -B /dev/{{ item }}"
+- name: make xfs on bcache devices
+  command: "mkfs.xfs -f -i size=2048 /dev/{{ item }}"
   with_items: "{{ ceph.disks }}"
   when: ok_to_deploy
 
-- name: udevadm trigger
-  command: "udevadm trigger"
-  when: ok_to_deploy
+- name: make metadata device
+  command: dmsetup create ssd-metadata --table '0 1024000 linear /dev/sdh7 0'
 
-- name: wait for bcache directories to be created before running next task
-  wait_for: path=/sys/block/bcache{{ item }}
-  with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-  when: ok_to_deploy
+- name: zero up metadata device
+  command: dd if=/dev/zero of=/dev/mapper/ssd-metadata bs=1024000 count=1
 
-- name: set cache mode to writeback
-  shell: echo writeback > /sys/block/bcache{{ item }}/bcache/cache_mode
-  with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-  when: ok_to_deploy
+- name: cache block device
+  command: dmsetup create ssd-blocks --table '0 2219266048 linear /dev/sdh7 1024000'
 
-- name: determine bcache uuid
-  shell: bcache-super-show /dev/{{ ceph.bcache_ssd_device }}{{ ceph.disks|length + 1 }} |
-         grep cset.uuid | awk '{print $2}'
-  changed_when: false
-  register: bcache_uuid
-  when: ok_to_deploy
-
-- name: attach to bcache devices
-  shell: echo {{ bcache_uuid.stdout }} > /sys/block/bcache{{ item }}/bcache/attach
-  with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
-  when: ok_to_deploy
-
-- name: make xfs on bcache devices
-  command: "mkfs -t xfs -f -i size=2048 -- /dev/bcache{{ item }}"
-  with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
+- name: make-bcache -B <sata disks>
+  command: dmsetup create dm{{ item }} --table "0 7812939776 cache /dev/mapper/ssd-metadata /dev/mapper/ssd-blocks /dev/{{ item }} 512 1 writeback default 0"
+  with_items: "{{ ceph.disks }}"
   when: ok_to_deploy
 
 - name: make sure all uuids of bcaches exist
-  shell: test `ls -l /dev/disk/by-uuid/ |grep bcache |wc -l` -eq "{{ ceph.disks|length }}"
+  shell: test `ls -l /dev/disk/by-uuid/ |grep dm |wc -l` -eq "{{ ceph.disks|length }}"
   register: result
   until: result.rc == 0
   retries: 6
@@ -113,7 +103,7 @@
   when: ok_to_deploy
 
 - name: activate osds
-  ceph_bcache:
+  ceph_dmcache:
     disks: "{{ ceph.disks }}"
     ssd_device: "{{ ceph.bcache_ssd_device }}"
     journal_guid: "{{ ceph.journal_guid }}"
