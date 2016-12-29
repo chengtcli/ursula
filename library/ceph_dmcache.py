@@ -57,7 +57,7 @@ def main():
         path = os.path.realpath(disk)
 
         if 'dm' in path:
-          bcache_index = int(path[len(path)-1:]) -2
+          bcache_index = int(path[len(path)-1:])
           uuids_in_order.pop(bcache_index)
           uuids_in_order.insert(bcache_index,uuid)
 
@@ -78,7 +78,7 @@ def main():
         bcache_index = int(osd_id) % len(disks)
         partition_index = bcache_index + 1
 
-        cmd = ['mount', '/dev/dm-' + str(bcache_index+2), '/var/lib/ceph/osd/ceph-' + osd_id]
+        cmd = ['mount', '/dev/dm-' + str(bcache_index), '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['ceph-osd', '-i', osd_id, '--mkfs', '--mkkey', '--osd-uuid', uuids_in_order[i]]
@@ -101,7 +101,7 @@ def main():
         cmd = ['umount', '/var/lib/ceph/osd/ceph-' + osd_id]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
-        cmd = ['ceph-disk', 'activate', '/dev/dm-' + str(bcache_index+2)]
+        cmd = ['ceph-disk', 'activate', '/dev/dm-' + str(bcache_index)]
         rc, out, err = module.run_command(cmd, check_rc=True)
 
         cmd = ['chown', '-R', 'ceph:ceph', '/var/lib/ceph/osd/ceph-' + osd_id]

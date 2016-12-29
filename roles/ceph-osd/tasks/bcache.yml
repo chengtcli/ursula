@@ -72,26 +72,25 @@
 
 - name: make bcache block partition
   command: parted --script /dev/{{ ceph.bcache_ssd_device }}
-           mkpart bcache {{ ceph.disks|length * 10000 + 1 }}MiB 100%
+           mkpart bcache {{ ceph.disks|length * 10000 + 1 }}MiB {{ ceph.disks|length * 10000 + 1000 }}MiB
+  when: ok_to_deploy
+
+- name: make bcache block partition
+  command: parted --script /dev/{{ ceph.bcache_ssd_device }}
+           mkpart bcache {{ ceph.disks|length * 10000 + 1001 }}MiB 100%
+  when: ok_to_deploy
+
+- name: zero up metadata device
+  command: dd if=/dev/zero of=/dev/sdh7 bs=1024000 count=1
+
+- name: make-bcache -B <sata disks>
+  command: dmsetup create dm{{ item }} --table "0 $(blockdev --getsz /dev/{{ item }}) cache /dev/sdh7 /dev/sdh8 /dev/{{ item }} 512 1 writeback default 0"
+  with_items: "{{ ceph.disks }}"
   when: ok_to_deploy
 
 - name: make xfs on bcache devices
-  command: "mkfs.xfs -f -i size=2048 /dev/{{ item }}"
-  with_items: "{{ ceph.disks }}"
-  when: ok_to_deploy
-
-- name: make metadata device
-  command: dmsetup create ssd-metadata --table '0 1024000 linear /dev/sdh7 0'
-
-- name: zero up metadata device
-  command: dd if=/dev/zero of=/dev/mapper/ssd-metadata bs=1024000 count=1
-
-- name: cache block device
-  command: dmsetup create ssd-blocks --table '0 2219266048 linear /dev/sdh7 1024000'
-
-- name: make-bcache -B <sata disks>
-  command: dmsetup create dm{{ item }} --table "0 7812939776 cache /dev/mapper/ssd-metadata /dev/mapper/ssd-blocks /dev/{{ item }} 512 1 writeback default 0"
-  with_items: "{{ ceph.disks }}"
+  command: "mkfs.xfs -f -i size=2048 /dev/dm-{{ item }}"
+  with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
   when: ok_to_deploy
 
 - name: make sure all uuids of bcaches exist
