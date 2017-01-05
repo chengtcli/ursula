@@ -1,6 +1,11 @@
 ---
 project_name: heat
 heat:
+  rhel_packages: 
+    - openstack-heat-api
+    - openstack-heat-api-cfn
+    - openstack-heat-engine
+    - openstack-heat-common
   enabled: True
   heartbeat_timeout_threshold: 30
   source:

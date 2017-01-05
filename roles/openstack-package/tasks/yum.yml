@@ -1,0 +1,19 @@
+---
+- name: "install {{ project_name }} package"
+  yum:
+    name: "{{ package_name|default(openstack_package.rhel_package_name) }}"
+    state: present
+  register: project_package
+  until: project_package|succeeded
+  retries: 5
+
+- name: "Install {{ project_name }} dependent packages"
+  yum:
+    name: "{{ item }}"
+    state: present
+  register: dep_package
+  until: dep_package|succeeded
+  retries: 5
+  with_items: "{{ dependent_packages }}"
+  when: dependent_packages is defined
+

@@ -71,14 +71,23 @@
     - glance-registry
   when: os == 'ubuntu'
 
-- name: install glance services
+- name: install glance services (rhel source)
   systemd_service: name={{ item }}
                    user=glance
                    cmd=/usr/local/bin/{{ item }}
   with_items:
     - glance-api
     - glance-registry
-  when: os == 'rhel'
+  when: os == 'rhel' and openstack_install_method == 'source'
+  
+- name: install glance services (rhel source)
+  systemd_service: name={{ item }}
+                   user=glance
+                   cmd=/bin/{{ item }}
+  with_items:
+    - glance-api
+    - glance-registry
+  when: os == 'rhel' and openstack_install_method == 'package'
 
 - name: glance config
   template: src={{ item }} dest=/etc/glance mode={{ 0644 if 'policy.json' in item else 0640 }}
@@ -96,7 +105,7 @@
   tags: db-migrate
 
 - name: sync glance database
-  command: /usr/local/bin/glance-manage db_sync
+  command: glance-manage db_sync
   when: database_create.changed or force_sync|default('false')|bool
   run_once: true
   changed_when: true

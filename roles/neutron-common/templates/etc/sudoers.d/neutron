@@ -1,4 +1,8 @@
 neutron ALL=(root) NOPASSWD: /sbin/brctl
 neutron ALL=(root) NOPASSWD: /sbin/bridge
 neutron ALL=(root) NOPASSWD: /sbin/ip
+{% if os == 'ubuntu' %}
 neutron ALL=(root) NOPASSWD: /usr/local/bin/neutron-rootwrap
+{% else %}
+neutron ALL=(root) NOPASSWD: /bin/neutron-rootwrap
+{% endif %}

@@ -21,4 +21,10 @@ dependencies:
     project_name: neutron
     rootwrap: True
     alternatives: "{{ neutron.alternatives }}"
-    when: openstack_install_method == 'package'
+    when: openstack_install_method == 'package' and os == 'ubuntu'
+  - role: openstack-package
+    project_name: neutron
+    dependent_packages: "{{ neutron.rhel_packages }}"
+    rootwrap: True
+    alternatives: "{{ neutron.alternatives }}"
+    when: openstack_install_method == 'package' and os == 'rhel'

@@ -17,6 +17,7 @@ common:
   serial_console:
     enabled: True
     name: ttyS0
+    baud_rate: 9600
   ssh_private_keys: []
   ssh:
     allow_from:
@@ -65,6 +66,7 @@ common:
       - vlan
       - lvm2
       - libpam-cracklib
+      - uwsgi-plugin-python
   python:
     system_packages:
       - python-pip

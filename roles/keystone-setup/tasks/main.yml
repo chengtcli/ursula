@@ -1,6 +1,6 @@
 ---
 - name: keystone bootstrap user
-  command: /usr/local/bin/keystone-manage bootstrap
+  command: keystone-manage bootstrap
   environment:
     OS_BOOTSTRAP_USERNAME: "{{ keystone.bootstrap.user }}"
     OS_BOOTSTRAP_PASSWORD: "{{ keystone.bootstrap.password }}"

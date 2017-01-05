@@ -35,10 +35,15 @@
   set_fact: uwsgi_path={{ openstack_source.virtualenv_base }}/keystone/bin/uwsgi
   when: openstack_install_method == 'source'
 
-- name: set uwsgi path (package install)
+- name: set uwsgi path (package install ubuntu)
   set_fact:
     uwsgi_path: "{{ openstack_package.virtualenv_base }}/keystone/bin/uwsgi"
-  when: openstack_install_method == 'package'
+  when: openstack_install_method == 'package' and os == 'ubuntu'
+
+- name: set uwsgi path (package install rhel)
+  set_fact:
+    uwsgi_path: "/usr/sbin/uwsgi"
+  when: openstack_install_method == 'package' and os == 'rhel'
 
 - name: install keystone uwsgi service
   template: src=etc/init/keystone.conf
@@ -109,7 +114,7 @@
   when: keystone.federation.enabled|bool and keystone.federation.idp.k2k.enabled|bool
 
 - name: sync keystone database
-  command: /usr/local/bin/keystone-manage db_sync
+  command: keystone-manage db_sync
   when: database_create.changed or force_sync|default('false')|bool
   run_once: true
   changed_when: true

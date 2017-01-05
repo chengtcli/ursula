@@ -19,6 +19,12 @@ dependencies:
   - role: openstack-package
     project_name: heat
     alternatives: "{{ heat.alternatives }}"
-    when: openstack_install_method == 'package'
+    when: openstack_install_method == 'package' and os == 'ubuntu'
+  - role: openstack-package
+    dependent_packages: "{{ heat.rhel_packages }}" 
+    project_name: heat
+    package_name: openstack-heat-common
+    alternatives: "{{ heat.alternatives }}"
+    when: openstack_install_method == 'package' and os == 'rhel'
   - role: openstack-database
     database_name: heat

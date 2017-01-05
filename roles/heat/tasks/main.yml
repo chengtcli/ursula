@@ -43,7 +43,7 @@
     - heat-engine
   when: os == 'ubuntu'
 
-- name: install heat services
+- name: install heat services (rhel source)
   systemd_service: name={{ item }}
                    user=heat
                    cmd=/usr/local/bin/{{ item }}
@@ -52,7 +52,18 @@
     - heat-api
     - heat-api-cfn
     - heat-engine
-  when: os == 'rhel'
+  when: os == 'rhel' and openstack_install_method == 'source'
+  
+- name: install heat services (rhel package)
+  systemd_service: name={{ item }}
+                   user=heat
+                   cmd=/bin/{{ item }}
+                   config_files=/etc/heat/heat.conf
+  with_items:
+    - heat-api
+    - heat-api-cfn
+    - heat-engine
+  when: os == 'rhel' and openstack_install_method == 'package'
 
 - name: heat config
   template: src=etc/heat/{{ item }} dest=/etc/heat/{{ item }} mode={{ 0644 if 'policy.json' in item else 0640 }} owner=heat group=heat
@@ -124,6 +135,7 @@
       OS_PROJECT_DOMAIN_NAME: default
     os_keystone_role:
       name: "{{ item }}"
+      validate_certs: "{{ validate_certs|default(omit) }}"
       auth:
         auth_url: "{{ endpoints.keystone.url.internal }}/v3"
         project_name: admin
@@ -140,6 +152,7 @@
       OS_IDENTITY_API_VERSION: 3
     os_user_role:
       role: heat_stack_owner
+      validate_certs: "{{ validate_certs|default(omit) }}"
       user: admin
       project: admin
       auth:
@@ -154,6 +167,7 @@
     environment:
       OS_IDENTITY_API_VERSION: 3
     os_keystone_domain:
+      validate_certs: "{{ validate_certs|default(omit) }}"
       name: heat
       auth:
         auth_url: "{{ endpoints.keystone.url.internal }}/v3"
@@ -178,6 +192,7 @@
     os_user:
       name: heat_domain_admin
       password: "{{ secrets.stack_domain_admin_password }}"
+      validate_certs: "{{ validate_certs|default(omit) }}"
       domain: "{{ heat_domain.domain.id }}"
       auth:
         auth_url: "{{ endpoints.keystone.url.internal }}/v3"
@@ -207,7 +222,7 @@
   tags: db-migrate
 
 - name: sync heat database
-  command: /usr/local/bin/heat-manage db_sync
+  command: heat-manage db_sync
   when: database_create.changed or force_sync|default('false')|bool
   run_once: true
   changed_when: true

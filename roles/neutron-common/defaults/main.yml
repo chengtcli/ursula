@@ -9,6 +9,8 @@ neutron:
   advertise_mtu: False
   path_mtu: 1550
   global_physnet_mtu: 1550
+  rhel_packages:
+    - openstack-neutron-linuxbridge
   vxlan:
     # The multicast prefix to use for broadcast, multicast and unknown frames
     # Consider using a larger prefix (e.g. a /24) on deployments with a

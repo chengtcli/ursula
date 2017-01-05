@@ -11,6 +11,8 @@ keystone:
     http_port:
       admin: 9091
       public: 9092
+    rhel_home: /usr/lib/python2.7/site-packages/keystone
+    ubuntu_home: /opt/openstack/current/keystone
   source:
     rev: 'stable/newton'
     constrain: True

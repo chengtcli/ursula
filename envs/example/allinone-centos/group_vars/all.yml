@@ -3,7 +3,7 @@ stack_env: example_allinone
 floating_ip: 172.16.0.100
 xtradb:
   sst_auth_password: asdf
-
+validate_certs: no
 percona:
   replication: False
 

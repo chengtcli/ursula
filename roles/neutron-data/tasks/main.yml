@@ -39,13 +39,21 @@
                    config_files=/etc/neutron/neutron.conf,/etc/neutron/plugins/ml2/ml2_plugin.ini,/etc/neutron/plugins/ml2/ml2_plugin_dataplane.ini
   when: os == 'ubuntu' and neutron.plugin == 'ml2'
 
-- name: install neutron-linuxbridge-agent service
+- name: install neutron-linuxbridge-agent service (rhel source)
   systemd_service: name=neutron-linuxbridge-agent
                    user=neutron
                    cmd=/usr/local/bin/neutron-linuxbridge-agent
                    config_dirs=/etc/neutron
                    config_files=/etc/neutron/neutron.conf,/etc/neutron/plugins/ml2/ml2_plugin.ini,/etc/neutron/plugins/ml2/ml2_plugin_dataplane.ini
-  when: os == 'rhel' and neutron.plugin == 'ml2'
+  when: os == 'rhel' and neutron.plugin == 'ml2' and openstack_install_method == 'source'
+
+- name: install neutron-linuxbridge-agent service (rhel package)
+  systemd_service: name=neutron-linuxbridge-agent
+                   user=neutron
+                   cmd=/bin/neutron-linuxbridge-agent
+                   config_dirs=/etc/neutron
+                   config_files=/etc/neutron/neutron.conf,/etc/neutron/plugins/ml2/ml2_plugin.ini,/etc/neutron/plugins/ml2/ml2_plugin_dataplane.ini
+  when: os == 'rhel' and neutron.plugin == 'ml2' and openstack_install_method == 'package'
 
 - name: trigger restart on upgrades
   debug:

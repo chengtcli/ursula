@@ -18,6 +18,10 @@ dependencies:
     when: openstack_install_method == 'source'
   - role: openstack-package
     project_name: horizon
-    when: openstack_install_method == 'package'
+    when: openstack_install_method == 'package' and os == 'ubuntu'
+  - role: openstack-package
+    project_name: horizon
+    package_name: openstack-dashboard
+    when: openstack_install_method == 'package' and os == 'rhel'
   - role: apache
   - role: keystone-defaults

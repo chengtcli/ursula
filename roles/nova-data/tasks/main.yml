@@ -69,10 +69,15 @@
                    config_dirs=/etc/nova
   when: os == 'ubuntu'
 
-- name: install nova-compute service
+- name: install nova-compute service (rhel package)
+  systemd_service: name=nova-compute user=nova cmd=/bin/nova-compute
+                   config_dirs=/etc/nova
+  when: os == 'rhel' and openstack_install_method == 'package'
+
+- name: install nova-compute service (rhel source)
   systemd_service: name=nova-compute user=nova cmd=/usr/local/bin/nova-compute
                    config_dirs=/etc/nova
-  when: os == 'rhel'
+  when: os == 'rhel' and openstack_install_method == 'source'
 
 - name: trigger restart on upgrades
   debug:

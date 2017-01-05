@@ -55,12 +55,12 @@
 # # This is done with command rather than pip due to a bug where the venv
 # # would get re-created on this task, breaking things badly. pip module
 # # needs to be fixed first.
-- name: install libvirt-python in package venv
+- name: install libvirt-python in package venv (ubuntu)
   command: "{{ 'nova'|ursula_package_path(openstack_package_version) }}/bin/pip install libvirt-python"
   register: lvpout
   changed_when: lvpout.stdout|search("Successfully installed")
   notify: restart nova services
-  when: openstack_install_method == 'package'
+  when: openstack_install_method == 'package' and os == 'ubuntu'
 
 - name: install libvirt-python in source venv
   command: "{{ openstack_source.virtualenv_base }}/nova/bin/pip install libvirt-python"

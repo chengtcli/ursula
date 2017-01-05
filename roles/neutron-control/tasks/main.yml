@@ -2,7 +2,7 @@
 - name: neutron api cache dir
   file: dest=/var/cache/neutron/api owner=neutron state=directory
 
-- name: install neutron-server service
+- name: install neutron-server service ( ubuntu source )
   upstart_service:
     name: neutron-server
     user: neutron
@@ -12,7 +12,7 @@
     envs: "{{ neutron.service.envs }}"
   when: os == 'ubuntu'
 
-- name: install neutron-server service
+- name: install neutron-server service (rhel source)
   systemd_service:
     name: neutron-server
     user: neutron
@@ -20,7 +20,17 @@
     config_dirs: /etc/neutron
     config_files: /etc/neutron/plugins/ml2/ml2_plugin.ini
     #envs: "{{ neutron.service.envs }}"
-  when: os == 'rhel'
+  when: os == 'rhel' and openstack_install_method == 'source'
+  
+- name: install neutron-server service (rhel package)
+  systemd_service:
+    name: neutron-server
+    user: neutron
+    cmd: /bin/neutron-server
+    config_dirs: /etc/neutron
+    config_files: /etc/neutron/plugins/ml2/ml2_plugin.ini
+    #envs: "{{ neutron.service.envs }}"
+  when: os == 'rhel' and openstack_install_method == 'package' 
 
 - name: stop neutron service before db sync
   service: name=neutron-server state=stopped
@@ -28,7 +38,7 @@
   tags: db-migrate
 
 - name: sync neutron database
-  command: /usr/local/bin/neutron-db-manage --config-file /etc/neutron/neutron.conf \
+  command: neutron-db-manage --config-file /etc/neutron/neutron.conf \
            --config-file /etc/neutron/plugins/ml2/ml2_plugin.ini upgrade head
   when: database_create.changed or force_sync|default('false')|bool
   run_once: true

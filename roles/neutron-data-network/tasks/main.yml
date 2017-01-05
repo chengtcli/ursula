@@ -79,7 +79,7 @@
     neutron-metadata-agent:
       config_files: /etc/neutron/metadata_agent.ini
 
-- name: install neutron-data-network services
+- name: install neutron-data-network services (rhel source)
   systemd_service:
     name: "{{ item.key }}"
     user: neutron
@@ -87,7 +87,25 @@
     config_dirs: /etc/neutron
     config_files: /etc/neutron/neutron.conf,{{ item.value.config_files }}
     #envs: "{{ neutron.service.envs }}"
-  when: os == 'rhel'
+  when: os == 'rhel' and openstack_install_method == 'source'
+  with_dict:
+    neutron-dhcp-agent:
+      config_files: /etc/neutron/dhcp_agent.ini
+    neutron-l3-agent:
+      config_files: /etc/neutron/l3_agent.ini
+      pidfile: /var/run/enutron-l3-agent.pid
+    neutron-metadata-agent:
+      config_files: /etc/neutron/metadata_agent.ini
+
+- name: install neutron-data-network services (rhel package)
+  systemd_service:
+    name: "{{ item.key }}"
+    user: neutron
+    cmd: "/bin/{{ item.key }}"
+    config_dirs: /etc/neutron
+    config_files: /etc/neutron/neutron.conf,{{ item.value.config_files }}
+    #envs: "{{ neutron.service.envs }}"
+  when: os == 'rhel' and openstack_install_method == 'package'
   with_dict:
     neutron-dhcp-agent:
       config_files: /etc/neutron/dhcp_agent.ini
@@ -178,7 +196,7 @@
         - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
         - /etc/neutron/neutron_lbaas.conf
 
-- name: install neutron lbaas service
+- name: install neutron lbaas service (rhel source)
   systemd_service:
     name: "{{ item.key }}"
     user: neutron
@@ -186,7 +204,25 @@
     config_dirs: /etc/neutron
     config_files: "{{ item.value.config_files|join(',') }}"
     #envs: "{{ neutron.service.envs }}"
-  when: os == 'rhel' and ((neutron.lbaas.enabled == "smart" and
+  when: os == 'rhel' and openstack_install_method == 'source' and ((neutron.lbaas.enabled == "smart" and
+         groups['controller'][0] not in groups['compute']) or
+         neutron.lbaas.enabled|bool)
+  with_dict:
+    neutron-lbaasv2-agent:
+      config_files:
+        - /etc/neutron/neutron.conf
+        - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
+        - /etc/neutron/neutron_lbaas.conf
+        
+- name: install neutron lbaas service (rhel package)
+  systemd_service:
+    name: "{{ item.key }}"
+    user: neutron
+    cmd: "/bin/{{ item.key }}"
+    config_dirs: /etc/neutron
+    config_files: "{{ item.value.config_files|join(',') }}"
+    #envs: "{{ neutron.service.envs }}"
+  when: os == 'rhel' and openstack_install_method == 'package' and ((neutron.lbaas.enabled == "smart" and
          groups['controller'][0] not in groups['compute']) or
          neutron.lbaas.enabled|bool)
   with_dict:

@@ -1,1 +1,6 @@
+{% if os == 'ubuntu' %}
 cinder ALL=(root) NOPASSWD: /usr/local/bin/cinder-rootwrap
+{% else %}
+cinder ALL=(root) NOPASSWD: /bin/cinder-rootwrap
+{% endif %}
+
