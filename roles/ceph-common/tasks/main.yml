@@ -1,18 +1,4 @@
 ---
-# ceph-centos-test
-- block:
-    - name: add my yum repo
-      yum_repository:
-        name: my-test-yum-repo
-        description: my-test-yum-repo
-        baseurl: http://169.44.130.106/myrepo/
-        gpgcheck: no
-        state: present
-
-    - name: yum update for systemd
-      shell: yum update -y systemd
-  when: ansible_os_family == 'RedHat'
-
 # run once for each host
 - include: upgrade_flags.yml
   when: ceph_upgrade_flag_done is undefined

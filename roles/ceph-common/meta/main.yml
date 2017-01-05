@@ -12,11 +12,4 @@ dependencies:
       - repo: 'deb {{ apt_repos.ceph.repo }} {{ ansible_lsb.codename }} main'
         key_url: '{{ apt_repos.ceph.key_url }}'
     when: os == 'ubuntu'
-
-  - role: repos
-    repo: ceph
-    when: os == 'rhel'
-# ceph-centos-test
-  - role: repos
-    repo: epel
-    when: os == 'rhel'
+# as redhat already has ceph repo added, we don't need to add it here

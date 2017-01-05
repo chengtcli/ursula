@@ -1,7 +1,7 @@
 ---
 - name: import rados module into glance
   file:
-    src: /usr/lib/python2.7/dist-packages/{{ item }}
+    src: "{{ ceph.pylib_dir[os] }}{{ item }}"
     dest: /opt/openstack/current/glance/lib/python2.7/site-packages/{{ item }}
     state: link
     owner: root
