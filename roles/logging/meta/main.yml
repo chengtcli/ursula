@@ -6,6 +6,6 @@ dependencies:
         key_url: '{{ apt_repos.logstash_forwarder.key_url }}'
     when: logging.install_method == 'apt'
   - role: sensu-check
-  - role: repos
-    repo: elastic
-    when: os == 'rhel'
+#  - role: repos
+#    repo: elastic
+#    when: os == 'rhel'

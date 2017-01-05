@@ -19,9 +19,9 @@ dependencies:
   - role: repos
     repo: sensu
     when: monitoring.enabled|default(True)|bool and os == 'rhel'
-  - role: repos
-    repo: epel
-    when: os == 'rhel'
+#  - role: repos
+#    repo: epel
+#    when: os == 'rhel'
   - role: docker
     when: docker.enabled is defined and docker.enabled|bool
   - role: monitoring-common

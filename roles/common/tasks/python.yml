@@ -1,4 +1,12 @@
 ---
+- name: get-pip.py
+  get_url:
+    url: https://bootstrap.pypa.io/get-pip.py
+    dest: /tmp/get-pip.py
+
+- name: install pip
+  shell: python /tmp/get-pip.py
+
 - name: python dependencies
   package:
     name: "{{ item }}"

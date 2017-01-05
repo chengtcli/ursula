@@ -1,0 +1,9 @@
+---
+ceph:
+  disks:
+    - vdb
+    - vdc
+    - vdd
+    - vde
+    - vdf
+    - vdg

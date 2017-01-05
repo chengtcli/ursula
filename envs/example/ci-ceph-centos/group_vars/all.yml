@@ -1,0 +1,116 @@
+---
+stack_env: ci-ceph-redhat-30node
+# redhat-test
+undercloud_cidr:
+  - cidr: 88.77.0.0/22
+ceph:
+  # ceph-centos-test
+  monitor_interface: eth0
+  enabled: True
+glance:
+  store_ceph: True
+primary_interface: ansible_eth0
+
+state_path_base: /opt/stack/data
+validate_certs: no
+etc_hosts:
+  - name: "{{ fqdn }}"
+    ip: "{{ floating_ip }}"
+
+
+neutron:
+  enable_external_interface: True
+  lbaas:
+    enabled: False
+
+keystone:
+  ldap_domain:
+    enabled: True
+    domain: users
+
+common:
+  hwraid:
+    enabled: False
+  system_tools:
+    mcelog: True
+    lm_sensors_package: lm_sensors
+    packages:
+      - acl
+      - curl
+      - dstat
+      - ethtool
+      - git
+      - iotop
+      - ltrace
+      - mtr
+      - nc
+      - ruby-devel
+      - ruby
+      - socat
+      - tree
+      - vim
+      - sysstat
+      - logrotate
+      - ntp
+      - lvm2
+      - cracklib
+      - mlocate
+      - cyrus-sasl-devel
+  python:
+    system_packages:
+#      - python-pip
+      - libxml2-python
+      - python-lxml
+      - python-greenlet
+      - pyOpenSSL
+      - python-devel
+      - python-httplib2
+      - python-virtualenv
+      - MySQL-python
+      - python-jinja2
+      - cryptsetup
+      - libffi-devel
+      - openssl-libs
+      - libxml2-devel
+      - libxslt-devel
+      - libxslt-devel
+      - openssl-devel
+      - libstdc++-static
+      - gcc-c++
+
+logging:
+  enabled: true
+  follow:
+    enabled: true
+    global_fields:
+      customer_id: "unknown"
+      cluster_name: "unknown"
+    logs:
+      - paths:
+          - /var/log/messages
+        fields:
+          type: syslog
+
+serverspec:
+  enabled: false
+
+xtradb:
+  galera_version: 3
+  client_version: 56
+  server_version: 56
+
+haproxy:
+  stats_group: root
+
+keystone:
+  uwsgi:
+    method: port
+
+heat:
+  enabled: True
+
+ironic:
+  enabled: False
+
+cinder:
+  enabled: True
