@@ -44,10 +44,11 @@
   modprobe: name=nbd state=present
   when: os == 'ubuntu'
 
-- name: install nbd package - rhel
-  package:
-    name: nbd
-  when: os == 'rhel'
+# redhat-test
+#- name: install nbd package - rhel
+#  package:
+#    name: nbd
+#  when: os == 'rhel'
 
 - name: check if SMT is enabled
   command: "ppc64_cpu --smt"
