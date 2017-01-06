@@ -4,7 +4,7 @@
   when: os == 'ubuntu'
 
 - set_fact:
-    tgt_service: tgtd
+    tgt_service: target
   when: os == 'rhel'
 
 - set_fact:
