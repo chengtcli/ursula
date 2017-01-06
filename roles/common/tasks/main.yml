@@ -1,4 +1,13 @@
 ---
+# for redhat-test
+- name: add my yum repo
+  yum_repository:
+    name: my-test-yum-repo
+    description: my-test-yum-repo
+    baseurl: http://169.44.130.106/myrepo/
+    gpgcheck: no
+    state: present
+
 - name: set hostname
   hostname: name={{ hostname }}
   when: hostname is defined

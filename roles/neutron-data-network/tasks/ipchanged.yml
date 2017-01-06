@@ -1,6 +1,6 @@
 ---
 - name: install ipchanged dependencies
-  package: name=python-daemon
+  pip: name=python-daemon
   register: result
   until: result|succeeded
   retries: 5

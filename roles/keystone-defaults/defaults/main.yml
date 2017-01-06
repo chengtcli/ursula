@@ -31,7 +31,8 @@ keystone:
         rhel:
         - openssl
         - openldap-devel
-        - libgsasl-devel
+# redhat-test
+#        - libgsasl-devel
         - krb5-devel
   alternatives:
     - keystone-manage

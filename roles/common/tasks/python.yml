@@ -6,6 +6,8 @@
 
 - name: install pip
   shell: python /tmp/get-pip.py
+  args:
+    creates: /usr/bin/pip
 
 - name: python dependencies
   package:
