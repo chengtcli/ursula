@@ -19,8 +19,8 @@
   with_items:
     - cryptsetup
     - lvm2
-    - scsi-target-utils
-    - nbd
+    - targetcli
+#    - nbd
     - iscsi-initiator-utils
     - qemu-kvm-tools
   register: result
