@@ -8,6 +8,14 @@
     gpgcheck: no
     state: present
 
+- name: set selinux mode permissive in file
+  lineinfile: dest=/etc/selinux/config regexp='^SELINUX=' line='SELINUX=permissive'
+  when: os == 'rhel'
+
+- name: set selinux mode permissive
+  shell: setenforce 0
+  when: os == 'rhel'
+
 - name: set hostname
   hostname: name={{ hostname }}
   when: hostname is defined
