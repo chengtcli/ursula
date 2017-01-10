@@ -28,7 +28,7 @@
 - name: create horizon config directory
   file: dest=/etc/openstack-dashboard state=directory
 
-- name: openstack dashboard config (12.04)
+- name: openstack dashboard config rhel)
   template: src=etc/apache2/sites-available/openstack_dashboard.conf
             dest=/etc/httpd/conf.d/openstack_dashboard.conf
   when: os == 'rhel'
@@ -102,7 +102,7 @@
     - reload apache
 
 #Use current Symlink for both package/source install
-- name: create static assets directory
+- name: create static assets directory (ubuntu)
   file: dest="{{ horizon.horizon_lib_dir }}/lib/python2.7/site-packages/openstack_dashboard/{{ item }}"
         owner="{{ apache_user }}" group="{{ apache_group }}" state=directory
   with_items:
@@ -110,6 +110,7 @@
     - static/dashboard
     - static/img
     - static/dashboard/fonts
+  when: os == 'ubuntu'
 
 ## FIXME
 ## We need to figure out the proper way to get horizon to use /etc/ when
@@ -121,6 +122,7 @@
         group="{{ apache_user }}"
         mode=0644
         state=link
+  when: os == 'ubuntu'
 
 - name: custom horizon logo
   get_url: url={{ item.url }}
@@ -132,14 +134,23 @@
     - { name: img/favicon.ico, url: "{{ horizon.favicon_url|default('') }}" }
   when: (horizon.logo_url is defined and horizon.favicon_url is defined)
 
-- name: Enable/Disable lbaas dashboard
+- name: Enable/Disable lbaas dashboard (ubuntu)
   file:
     src: "{{ horizon.horizon_lib_dir }}/lib/python2.7/site-packages/neutron_lbaas_dashboard/enabled/_1481_project_ng_loadbalancersv2_panel.py"
     path: "{{ horizon.horizon_lib_dir }}/lib/python2.7/site-packages/openstack_dashboard/local/enabled/_1481_project_ng_loadbalancersv2_panel.py"
     state: "{{ (neutron.lbaas.enabled | bool) | ternary('link', 'absent') }}"
   notify: reload apache
+  when: os == 'ubuntu'
+  
+- name: Enable/Disable lbaas dashboard (rhel)
+  file:
+    src: "{{ horizon.rhel_lib_dir }}/neutron_lbaas_dashboard/enabled/_1481_project_ng_loadbalancersv2_panel.py"
+    path: "{{ horizon.rhel_lib_dir }}/openstack_dashboard/local/enabled/_1481_project_ng_loadbalancersv2_panel.py"
+    state: "{{ (neutron.lbaas.enabled | bool) | ternary('link', 'absent') }}"
+  notify: reload apache
+  when: os == 'ubuntu'
 
-- name: gather static assets from openstack install
+- name: gather static assets from openstack install (ubuntu)
   environment:
     DJANGO_SETTINGS_MODULE: 'openstack_dashboard.settings'
     PYTHONPATH: "$PYTHONPATH"
@@ -147,6 +158,17 @@
   with_items:
     - "{{ horizon.horizon_lib_dir }}/bin/django-admin.py collectstatic --noinput"
     - "{{ horizon.horizon_lib_dir }}/bin/django-admin.py compress --force"
+  when: os == 'ubuntu'
+
+#- name: gather static assets from openstack install (rhel)
+#  environment:
+#    DJANGO_SETTINGS_MODULE: 'openstack_dashboard.settings'
+#    PYTHONPATH: "$PYTHONPATH"
+#  shell: "{{ item }}"
+#  with_items:
+#    - "/usr/lib/python2.7/site-packages/django/bin/django-admin.py collectstatic --noinput"
+#    - "/usr/lib/python2.7/site-packages/django/bin/django-admin.py compress --force"
+#  when: os == 'rhel'
 
 - name: trigger restart on upgrades
   debug:

@@ -1,1 +1,6 @@
+{% if os == 'ubuntu' %}
 ironic ALL=(root) NOPASSWD: /usr/local/bin/ironic-rootwrap
+{% else %}
+ironic ALL=(root) NOPASSWD: /bin/ironic-rootwrap
+{% endif %}
+

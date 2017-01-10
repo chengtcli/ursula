@@ -26,7 +26,8 @@ controller-0
 controller-1
 
 [cinder_volume]
-compute-0
+controller-0
+controller-1
 
 [ceph_monitors]
 cpm1

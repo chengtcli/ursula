@@ -31,8 +31,7 @@
   with_items:
     - libvirt-python
     - qemu-kvm
-# redhat-test
-#    - "{{ nova.qemu_system_package }}"
+    - "{{ nova.qemu_system_package }}"
     - librbd1
     - libiscsi
     - iscsi-initiator-utils
