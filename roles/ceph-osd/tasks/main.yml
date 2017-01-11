@@ -7,19 +7,17 @@
 
 - name: verify disks have been provided
   fail: msg="please provide osd disks"
-  when: ceph.disks is not defined
+  when: ceph.disks is not defined or ceph.disks|length <= 0
 
 - name: install dependencies
-  package: name={{ item }}
-       state=present
-  with_items: "{{ ceph.osd_pkgs }}"
+  package: name={{ item }} state=present
+  with_items: "{{ ceph.osd_dep_pkgs }}"
   register: result
   until: result|succeeded
   retries: 5
 
 - name: install bcache dependencies
-  package: name={{ item }}
-       state=present
+  package: name={{ item }} state=present
   with_items: "{{ ceph.bcache_pkgs }}"
   when: "'ceph_osds_hybrid' in group_names"
   register: result

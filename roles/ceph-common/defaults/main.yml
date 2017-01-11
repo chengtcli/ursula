@@ -18,18 +18,36 @@ ceph:
 
   journal_guid: 45b0969e-9b03-4f30-b4c6-b4b80ceff106
 
+  mon_service:
+    ubuntu: ceph-mon-all
+    rhel: ceph-mon.target
+  osd_service:
+    ubuntu: ceph-osd-all
+    rhel: ceph-osd.target
+
+  hugepage_pkgs:
+    ubuntu:
+      - hugepages
+    rhel:
+      - libhugetlbfs
+      - libhugetlbfs-utils
+
   # Packages
   depend_pkgs:
     - python-pycurl
     - ntp
     - hdparm
-  ceph_pkgs:
-    - ceph-mon
-    - ceph-osd
-  osd_pkgs:
+  osd_dep_pkgs:
     - parted
   bcache_pkgs:
       - bcache-tools
+  # ubuntu and redhat have different package version connector.
+  # for ceph as example
+  #   ubuntu: apt-get install ceph-common=10.2.3
+  #   redhat: apt-get install ceph-common-10.2.3
+  pkg_version_connector:
+    ubuntu: "="
+    rhel: "-"
 
   # Ceph options
   cephx: true

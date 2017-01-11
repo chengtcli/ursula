@@ -29,23 +29,29 @@
   until: result|succeeded
   retries: 5
 
-- name: install ceph(debian)
-  apt: pkg={{ item }}={{ ceph.version }}
-       state=present
-  with_items: "{{ ceph.ceph_pkgs }}"
+- name: install ceph common(include ceph client)
+  package: name=ceph-common{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+           state=present
   register: result
   until: result|succeeded
   retries: 5
-  when: ansible_os_family == 'Debian'
+  when: "'controller' in group_names or 'compute' in group_names"
 
-- name: install ceph(redhat)
-  yum: name={{ item }}-{{ ceph.version }}
-       state=present
-  with_items: "{{ ceph.ceph_pkgs }}"
+- name: install ceph monitor
+  package: name=ceph-mon{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+           state=present
   register: result
   until: result|succeeded
   retries: 5
-  when: ansible_os_family == 'RedHat'
+  when: "'ceph_monitors' in group_names"
+
+- name: install ceph osd
+  package: name=ceph-osd{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+           state=present
+  register: result
+  until: result|succeeded
+  retries: 5
+  when: "'ceph_osds' in group_names"
 
 - name: check for a ceph socket
   shell: "stat /var/run/ceph/*.asok > /dev/null 2>&1"

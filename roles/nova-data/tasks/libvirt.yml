@@ -123,9 +123,18 @@
     line: 'allow_incoming_qemukvm = 1'
   notify: restart libvirt-bin
 
-- name: ensure kvm is supported by cpu and enabled in bios
+- name: ensure kvm is supported by cpu and enabled in bios(ubuntu)
   command: kvm-ok
-  when: "'{{ nova.libvirt_type }}' == 'kvm'"
+  when:
+    - "'{{ nova.libvirt_type }}' == 'kvm'"
+    - os == 'ubuntu'
+  changed_when: False
+
+- name: ensure kvm is supported by cpu(redhat)
+  command: egrep '(vmx|svm)' /proc/cpuinfo
+  when:
+    - "'{{ nova.libvirt_type }}' == 'kvm'"
+    - os == 'rhel'
   changed_when: False
 
 - name: generate really unique uuid
