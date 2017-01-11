@@ -105,6 +105,8 @@ haproxy:
 keystone:
   uwsgi:
     method: port
+nova:
+  libvirt_type: kvm
 
 heat:
   enabled: True

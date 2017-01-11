@@ -31,7 +31,7 @@
   with_items:
     - libvirt-python
     - qemu-kvm
-    - "{{ nova.qemu_system_package }}"
+#    - "{{ nova.qemu_system_package }}"
     - librbd1
     - libiscsi
     - iscsi-initiator-utils
