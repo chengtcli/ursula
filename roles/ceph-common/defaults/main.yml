@@ -44,7 +44,7 @@ ceph:
   # ubuntu and redhat have different package version connector.
   # for ceph as example
   #   ubuntu: apt-get install ceph-common=10.2.3
-  #   redhat: apt-get install ceph-common-10.2.3
+  #   redhat: yum     install ceph-common-10.2.3
   pkg_version_connector:
     ubuntu: "="
     rhel: "-"

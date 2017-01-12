@@ -4,17 +4,15 @@
   changed_when: false
   failed_when: false
 
-- name: install dependencies
-  package: name={{ item }}
-  with_items: "{{ ceph.hugepage_pkgs[os] }}"
-  when:
-    - ceph.disable_transparent_hugepage
-  register: result
-  until: result|succeeded
-  retries: 5
-
 # disable transparent hugepage
 - block:
+  - name: install dependencies
+    package: name={{ item }}
+    with_items: "{{ ceph.hugepage_pkgs[os] }}"
+    register: result
+    until: result|succeeded
+    retries: 5
+
   - name: disable transparent hugepage until next reboot
     command: hugeadm --thp-never
   
