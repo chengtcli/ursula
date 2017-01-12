@@ -30,7 +30,7 @@
   retries: 5
 
 - name: install ceph common(include ceph client)
-  package: name=ceph-common{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+  package: name=ceph-common{{ ceph.pkg_version_connector[os] }}{{ ceph.version[os] }}
            state=present
   register: result
   until: result|succeeded
@@ -38,7 +38,7 @@
   when: "'controller' in group_names or 'compute' in group_names"
 
 - name: install ceph monitor
-  package: name=ceph-mon{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+  package: name=ceph-mon{{ ceph.pkg_version_connector[os] }}{{ ceph.version[os] }}
            state=present
   register: result
   until: result|succeeded
@@ -46,7 +46,7 @@
   when: "'ceph_monitors' in group_names"
 
 - name: install ceph osd
-  package: name=ceph-osd{{ ceph.pkg_version_connector[os] }}{{ ceph.version }}
+  package: name=ceph-osd{{ ceph.pkg_version_connector[os] }}{{ ceph.version[os] }}
            state=present
   register: result
   until: result|succeeded

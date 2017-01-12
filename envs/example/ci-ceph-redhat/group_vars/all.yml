@@ -1,10 +1,8 @@
 ---
-stack_env: ci-ceph-redhat-30node
-# redhat-test
+stack_env: ci-ceph-redhat
 undercloud_cidr:
-  - cidr: 88.77.0.0/22
+  - cidr: 192.168.0.0/22
 ceph:
-  # ceph-centos-test
   monitor_interface: eth0
   enabled: True
 glance:

@@ -8,15 +8,19 @@ parameters:
   image:
     type: string
     description: Name of image to use for servers
-    default: redhat7.3
+    default: rhel7.3
   flavor:
     type: string
     description: Flavor to use for servers
     default: m1.large
+  storage_flavor:
+    type: string
+    description: Flavor to use for servers
+    default: ci_ceph_swift
   network:
     type: string
     description: Name of Neutron network into which servers get deployed
-    default: openvpn_jumper_network_20161123054335
+    default: internal
   floating_ip_pool:
     type: string
     description: Name of floating ip pool to use
@@ -24,11 +28,11 @@ parameters:
   key_name:
     type: string
     description: Name of the ssh keypair to use for servers
-    default: redhat72_key
+    default: ci_ceph_rhel_key
   security_group:
     type: string
     description: Name of the security group to use for servers
-    default: redhat72_ursula
+    default: redhat_ursula
   controller-0_name:
     type: string
     description: Name of controller-0 server
@@ -67,114 +71,6 @@ parameters:
     default: ceph3
 
 resources:
-  ceph1_vol1:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol1
-      size: 100
-      volume_type: CEPH_SSD
-  ceph1_vol2:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol2
-      size: 100
-      volume_type: CEPH_SSD
-  ceph1_vol3:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol3
-      size: 100
-      volume_type: CEPH_SSD
-  ceph1_vol4:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol4
-      size: 100
-      volume_type: CEPH_SSD
-  ceph1_vol5:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol5
-      size: 100
-      volume_type: CEPH_SSD
-  ceph1_vol6:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph1_vol6
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol1:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol1
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol2:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol2
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol3:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol3
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol4:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol4
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol5:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol5
-      size: 100
-      volume_type: CEPH_SSD
-  ceph2_vol6:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph2_vol6
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol1:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol1
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol2:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol2
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol3:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol3
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol4:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol4
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol5:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol5
-      size: 100
-      volume_type: CEPH_SSD
-  ceph3_vol6:
-    type: OS::Cinder::Volume
-    properties:
-      name: ceph3_vol6
-      size: 100
-      volume_type: CEPH_SSD
   server_security_group:
     type: OS::Neutron::SecurityGroup
     properties:
@@ -291,7 +187,7 @@ resources:
   cpm1:
     type: OS::Nova::Server
     properties:
-      name: cpm1
+      name: { get_param: cpm1 }
       image: { get_param: image }
       flavor: m1.medium
       key_name: { get_resource: ssh_keypair }
@@ -304,7 +200,7 @@ resources:
   cpm2:
     type: OS::Nova::Server
     properties:
-      name: cpm2
+      name: { get_param: cpm2 }
       image: { get_param: image }
       flavor: m1.medium
       key_name: { get_resource: ssh_keypair }
@@ -316,7 +212,7 @@ resources:
   cpm3:
     type: OS::Nova::Server
     properties:
-      name: cpm3
+      name: { get_param: cpm3 }
       image: { get_param: image }
       flavor: m1.medium
       key_name: { get_resource: ssh_keypair }
@@ -328,9 +224,9 @@ resources:
   ceph1:
     type: OS::Nova::Server
     properties:
-      name: ceph1
+      name: { get_param: ceph1 }
       image: { get_param: image }
-      flavor: m1.medium
+      flavor: { get_param: storage_flavor }
       key_name: { get_resource: ssh_keypair }
       user_data_format: RAW
       security_groups: [{ get_resource: server_security_group }]
@@ -340,9 +236,9 @@ resources:
   ceph2:
     type: OS::Nova::Server
     properties:
-      name: ceph2
+      name: { get_param: ceph2 }
       image: { get_param: image }
-      flavor: m1.medium
+      flavor: { get_param: storage_flavor }
       key_name: { get_resource: ssh_keypair }
       user_data_format: RAW
       security_groups: [{ get_resource: server_security_group }]
@@ -352,105 +248,15 @@ resources:
   ceph3:
     type: OS::Nova::Server
     properties:
-      name: ceph3
+      name: { get_param: ceph3 }
       image: { get_param: image }
-      flavor: m1.medium
+      flavor: { get_param: storage_flavor }
       key_name: { get_resource: ssh_keypair }
       user_data_format: RAW
       security_groups: [{ get_resource: server_security_group }]
       networks:
         - network: { get_param: network }
 
-  ceph1_att_vol1:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol1 }
-  ceph1_att_vol2:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol2 }
-  ceph1_att_vol3:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol3 }
-  ceph1_att_vol4:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol4 }
-  ceph1_att_vol5:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol5 }
-  ceph1_att_vol6:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph1 }
-      volume_id: { get_resource: ceph1_vol6 }
-  ceph2_att_vol1:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol1 }
-  ceph2_att_vol2:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol2 }
-  ceph2_att_vol3:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol3 }
-  ceph2_att_vol4:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol4 }
-  ceph2_att_vol5:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol5 }
-  ceph2_att_vol6:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph2 }
-      volume_id: { get_resource: ceph2_vol6 }
-  ceph3_att_vol1:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol1 }
-  ceph3_att_vol2:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol2 }
-  ceph3_att_vol3:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol3 }
-  ceph3_att_vol4:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol4 }
-  ceph3_att_vol5:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol5 }
-  ceph3_att_vol6:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      instance_uuid: { get_resource: ceph3 }
-      volume_id: { get_resource: ceph3_vol6 }
 ### Floating IP resources and associations for servers
 #  controller-0_floating_ip:
 #     type: OS::Nova::FloatingIP

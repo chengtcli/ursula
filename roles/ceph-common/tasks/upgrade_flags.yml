@@ -5,11 +5,11 @@
     upgrade_ceph: false
     upgrade_ceph2jewel: false
 
-# ceph.version may have chars more than number and dot, for example, 10.2.3~bbc
+# ceph.version may have chars more than number and dot, for example, 10.2.3~bbc1
 # we get the pure version number(10.2.3) here for future version comparison
 - name: set target version pure number
   set_fact:
-    ceph_pure_version: '{{ ceph.version | regex_replace("^(\d+\.\d+\.?\d{0,3}).*$", "\1") }}'
+    ceph_pure_version: '{{ ceph.version[os] | regex_replace("^(\d+\.\d+\.?\d{0,3}).*$", "\1") }}'
 
 - name: get installed ceph version
   shell: ceph --version |grep -oP "\d+\.\d+\.?\d{0,3}"
