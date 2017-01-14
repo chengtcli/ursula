@@ -11,7 +11,8 @@
   shell: ceph osd crush rule create-simple {{ ssd_ruleset }} {{ ssd_pool }} host firstn
   register: result
   changed_when: not result.stdout |search("already exists")
-  when: inventory_hostname == groups['ceph_osds_ssd'][0]
+  delegate_to: "{{ groups['ceph_monitors'][0] }}"
+  run_once: true
 
 # Create osd host bucket
 - name: Create osd host bucket
@@ -29,17 +30,18 @@
 - name: check if 'ceph' partition exists on osd disks
   shell: "parted --script /dev/{{ item }} print | egrep -sq 'ceph'"
   with_items: "{{ ceph.disks }}"
-  ignore_errors: true
+  failed_when: false
   changed_when: false
   register: ceph_partitions
 
-# journal_collocation
-- name: prepare osd disks
-  command: ceph-disk prepare /dev/{{ item.1 }}
-  with_together:
-    - ceph_partitions.results
-    - ceph.disks
-  when: item.0.rc != 0
+- name: activate new osds(full ssd)
+  include: activate_fullssd.yml
+  delegate_to: "{{ outer_item }}"
+  with_items: "{{ groups['ceph_osds_ssd'] }}"
+  loop_control:
+    loop_var: outer_item
+  when: outer_item in play_hosts
+  run_once: true
 
 - name: activate osds
   command: ceph-disk activate /dev/{{ item.1 }}1
@@ -55,11 +57,11 @@
     pool_name: "{{ ssd_pool }}"
     osds: "{{ groups['ceph_osds_ssd']|length * ceph.disks|length }}"
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds_ssd'][-1]
+  run_once: true
 
 # not sure is there a better way to get ruleset id
 - name: set ruleset for pool
   shell: ceph osd pool set {{ ssd_pool }} crush_ruleset
          $(ceph osd crush rule dump |grep {{ ssd_ruleset }} -A1 |grep -oP '\d+')
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds_ssd'][-1]
+  run_once: true

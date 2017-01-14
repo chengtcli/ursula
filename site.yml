@@ -174,7 +174,6 @@
 
 - name: ceph osds
   hosts: ceph_osds
-  serial: 1
   any_errors_fatal: true
   roles:
     - role: ceph-osd

@@ -40,7 +40,7 @@
   with_items: "{{ groups['ceph_osds_hybrid'] | default([]) }}"
   when: result_first_osd_host is defined and item | search(result_first_osd_host.stdout)
 
-# there is potential risk of host name match, do a check here
+# there is potential risk that host name doesn't match, do a check here
 - name: pool name should have been defined here if only default pool exists
   assert:
     that:
