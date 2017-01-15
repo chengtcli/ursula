@@ -148,7 +148,7 @@
     ceph_init_ssd: "{{ hostvars[item].ceph_init_ssd }}"
     journal_guid: "{{ ceph.journal_guid }}"
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['ceph_osds_hybrid'] }}"
+  with_items: "{{ groups['ceph_osds_hybrid']|default([]) }}"
   when:
     - item in play_hosts
     - hostvars[item].ceph_init_ssd or hostvars[item].result_bcache_backs.changed

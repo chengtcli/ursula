@@ -1,4 +1,6 @@
 ---
+# we restart ceph services when upgrade or config update
+# restarting ceph service demands ceph health ok
 # Wait for a max of 30 minutes
 - name: wait for ceph cluster to be in health ok state
   shell: ceph health | egrep -q "HEALTH_OK"
@@ -76,4 +78,4 @@
   retries: 30
   delay: 60
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds'][-1]
+  when: inventory_hostname == play_hosts[-1]
