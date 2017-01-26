@@ -164,6 +164,14 @@
       tags: ['iptables', 'infra']
   environment: "{{ env_vars|default({}) }}"
 
+- name: ceph common
+  hosts: ceph_monitors:ceph_osds:controller:compute
+  any_errors_fatal: true
+  roles:
+    - role: ceph-common
+      tags: ['ceph', 'ceph-common']
+  environment: "{{ env_vars|default({}) }}"
+
 - name: ceph monitors
   hosts: ceph_monitors
   any_errors_fatal: true

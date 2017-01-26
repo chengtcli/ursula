@@ -14,7 +14,7 @@
     - qemu-kvm={{ nova.qemu_kvm_version }}
     - "{{ nova.qemu_system_package }}={{ nova.qemu_kvm_version }}"
     - qemu-system-common={{ nova.qemu_kvm_version }}
-    - librbd1={{ nova.librdb1_version }}
+#    - librbd1={{ nova.librdb1_version }}
     - open-iscsi
     - libvirt-dev={{ nova.libvirt_bin_version }}
     - pkg-config
