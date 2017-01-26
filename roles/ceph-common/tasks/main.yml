@@ -105,9 +105,13 @@
             owner=root
             group=root
             mode=0644
-  notify:
-    - restart ceph mons
-    - restart ceph osds
+  register: result
+
+- name: set ceph restart flag for ceph conf change
+  service_flag:
+    name: ceph
+    livetrue: '{{ result.changed }}'
+  tags: ['ceph-update']
 
 - include: logging.yml
   tags:

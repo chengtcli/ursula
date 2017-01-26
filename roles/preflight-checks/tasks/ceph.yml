@@ -1,13 +1,8 @@
 ---
 # this yml is executed with ceph installed
-- name: check ceph health
-  command: ceph -s
-  register: result_ceph_status
-  delegate_to: "{{ groups['ceph_monitors'][0] }}"
-
 - name: fail when ceph health is not ok
-  fail: msg="ceph status is not health ok"
-  when: not result_ceph_status.stdout |search("HEALTH_OK")
+  shell: ceph health |grep -P '^(HEALTH_OK)|(HEALTH_WARN \d+ near full osd\(s\))$'
+  delegate_to: "{{ groups['ceph_monitors'][0] }}"
 
 - name: fail when there is no CEPH in cinder type list
   shell: . /root/stackrc; cinder type-list |grep CEPH
@@ -26,3 +21,17 @@
   delegate_to: "{{ item }}"
   with_items:
     - "{{ groups['controller'] }}"
+
+- name: detect scale-out
+  shell: ceph osd tree |grep -i host |wc -l
+  delegate_to: "{{ groups['ceph_monitors'][0] }}"
+  register: result_osdhosts
+
+# this flag will only be used to increase time-wait in ceph-update role
+# to tolerate misoperation of making scale-out and ceph update together
+- name: set scale-out flag
+  set_fact:
+    ceph_scale_out: true
+  delegate_to: "{{ groups['ceph_monitors'][0] }}"
+  delegate_facts: yes
+  when: result_osdhosts.stdout|int < groups['ceph_osds']|length

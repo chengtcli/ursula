@@ -1,10 +1,24 @@
 ---
-# Wait for a max of 30 minutes
-- name: wait for ceph cluster to be in health ok state
-  shell: ceph health | egrep -q "HEALTH_OK"
+# wait for up to 6 hours for rebalancing
+# this is to tolerate misoperation. This doesn't happen in standard flow.
+- name: wait for ceph cluster to be in health ok state for up to 6 hours
+  shell: ceph health |grep -P '^(HEALTH_OK)|(HEALTH_WARN \d+ near full osd\(s\))$'
   register: result
   until: result.rc == 0
-  retries: 30
+  retries: 360
+  delay: 60
+  when:
+    - inventory_hostname == groups['ceph_monitors'][0]
+    - ceph_scale_out | default(false)
+
+# we restart ceph services when upgrade or config update
+# restarting ceph service demands ceph health ok
+# Wait for a max of 10 minutes
+- name: wait for ceph cluster to be in health ok state
+  shell: ceph health |grep -P '^(HEALTH_OK)|(HEALTH_WARN \d+ near full osd\(s\))$'
+  register: result
+  until: result.rc == 0
+  retries: 10
   delay: 60
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
 
@@ -61,12 +75,17 @@
     delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: "'ceph_osds' in group_names"
 
+- name: remove ceph restart flag
+  service_flag:
+    name: ceph
+    state: absent
+
 # make sure ceph health ok after update
 - name: wait for ceph cluster to be in health ok state
-  shell: ceph health | egrep -q "HEALTH_OK"
+  shell: ceph health |grep -P '^(HEALTH_OK)|(HEALTH_WARN \d+ near full osd\(s\))$'
   register: result
   until: result.rc == 0
-  retries: 30
+  retries: 10
   delay: 60
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
   when: inventory_hostname == groups['ceph_osds'][-1]
