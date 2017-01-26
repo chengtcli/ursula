@@ -2,8 +2,13 @@
 # set ceph related variables for future tasks
 - include: pool_names.yml
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds'][0]
-  tags: ['monitoring', 'openstack', 'control', 'glance', 'cinder', 'cinder-data', 'nova', 'nova-data', 'data', 'openstack-setup']
+  # there is a bug with ansible
+  # https://github.com/ansible/ansible/issues/15365
+  # delegate_facts does not work with run_once
+  # so we use inventory_hostname == play_hosts[0] instead of run_once
+  when: inventory_hostname == play_hosts[0]
+  tags: ['monitoring', 'openstack', 'control', 'glance', 'cinder',
+         'cinder-data', 'nova', 'nova-data', 'data', 'openstack-setup']
 
 - name: verify disks have been provided
   fail: msg="please provide osd disks"
@@ -12,14 +17,6 @@
 - name: install dependencies
   package: name={{ item }} state=present
   with_items: "{{ ceph.osd_dep_pkgs }}"
-  register: result
-  until: result|succeeded
-  retries: 5
-
-- name: install bcache dependencies
-  package: name={{ item }} state=present
-  with_items: "{{ ceph.bcache_pkgs }}"
-  when: "'ceph_osds_hybrid' in group_names"
   register: result
   until: result|succeeded
   retries: 5
@@ -51,7 +48,7 @@
   register: poolout
   changed_when: poolout.stdout | search('removed')
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds'][0] 
+  run_once: true
 
 - include: standard.yml
   when: "'ceph_osds_ssd' in group_names"

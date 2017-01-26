@@ -1,17 +1,24 @@
 ---
+- name: install bcache dependencies
+  package: name={{ item }} state=present
+  with_items: "{{ ceph.bcache_pkgs }}"
+  register: result
+  until: result|succeeded
+  retries: 5
+
 # Create hybrid bucket
 - name: Create root hybrid-bucket
   shell: ceph osd crush add-bucket {{ hybrid_pool }} root
   register: result
   changed_when: result.stdout |search("added bucket")
-  when: inventory_hostname == groups['ceph_osds_hybrid'][0]
+  run_once: true
 
 # Create crush ruleset for the hybrid root bucket
 - name: Create crush ruleset hybrid root bucket
   shell: ceph osd crush rule create-simple {{ hybrid_ruleset }} {{ hybrid_pool }} host firstn
   register: result
   changed_when: not result.stdout |search("already exists")
-  when: inventory_hostname == groups['ceph_osds_hybrid'][0]
+  run_once: true
 
 # Create osd host bucket
 - name: Create osd host bucket
@@ -134,13 +141,18 @@
     with_sequence: "start=0 end={{ ceph.disks|length - 1 }}"
   when: ceph_init_ssd
 
-- name: activate osds
+- name: activate new osds(hybrid)
   ceph_bcache:
     disks: "{{ ceph.disks }}"
     ssd_device: "{{ ceph.bcache_ssd_device }}"
-    ceph_init_ssd: "{{ ceph_init_ssd }}"
+    ceph_init_ssd: "{{ hostvars[item].ceph_init_ssd }}"
     journal_guid: "{{ ceph.journal_guid }}"
-  when: ceph_init_ssd or result_bcache_backs.changed
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['ceph_osds_hybrid']|default([]) }}"
+  when:
+    - item in play_hosts
+    - hostvars[item].ceph_init_ssd or hostvars[item].result_bcache_backs.changed
+  run_once: true
 
 - name: make sure ceph-osd-all started
   service: name=ceph-osd-all state=started
@@ -152,11 +164,11 @@
     pool_name: "{{ hybrid_pool }}"
     osds: "{{ groups['ceph_osds_hybrid']|length * ceph.disks|length }}"
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds_hybrid'][-1]
+  run_once: true
 
 # not sure is there a better way to get ruleset id
 - name: set ruleset for pool
   shell: ceph osd pool set {{ hybrid_pool }} crush_ruleset
          $(ceph osd crush rule dump |grep {{ hybrid_ruleset }} -A1 |grep -oP '\d+')
   delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  when: inventory_hostname == groups['ceph_osds_hybrid'][-1]
+  run_once: true

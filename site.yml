@@ -184,7 +184,6 @@
 
 - name: ceph osds
   hosts: ceph_osds
-  serial: 1
   any_errors_fatal: true
   roles:
     - role: ceph-osd
@@ -430,5 +429,5 @@
   roles:
     - role: ceph-update
       tags: ['ceph', 'ceph-update']
-      when: ceph.enabled|default('False')|bool and (ceph.scaleout|default('False')|bool or upgrade_ceph|bool)
+      when: ceph.enabled|default('False')|bool and (ceph_config_file.changed or upgrade_ceph|bool)
   environment: "{{ env_vars|default({}) }}"
