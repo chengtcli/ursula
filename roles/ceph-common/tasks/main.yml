@@ -105,13 +105,15 @@
             owner=root
             group=root
             mode=0644
-  register: result
+  register: result_ceph_conf
 
 - name: set ceph restart flag for ceph conf change
-  service_flag:
-    name: ceph
-    livetrue: '{{ result.changed }}'
-  tags: ['ceph-update']
+  copy: dest=/etc/ansible/facts.d/restart_ceph.fact content='true'
+  when: result_ceph_conf.changed
+
+- name: re-read facts after adding custom fact
+  setup: filter=ansible_local
+  when: result_ceph_conf.changed
 
 - include: logging.yml
   tags:

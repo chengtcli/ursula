@@ -1,5 +1,4 @@
 ---
-# journal_collocation
 - name: prepare osd disks
   command: ceph-disk prepare /dev/{{ item.item }}
   with_items: "{{ hostvars[outer_item].ceph_partitions.results }}"

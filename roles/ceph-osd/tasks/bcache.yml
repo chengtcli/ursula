@@ -6,7 +6,6 @@
   until: result|succeeded
   retries: 5
 
-# Create hybrid bucket
 - name: Create root hybrid-bucket
   shell: ceph osd crush add-bucket {{ hybrid_pool }} root
   register: result
@@ -20,13 +19,11 @@
   changed_when: not result.stdout |search("already exists")
   run_once: true
 
-# Create osd host bucket
 - name: Create osd host bucket
   shell: ceph osd crush add-bucket {{ ansible_hostname }} host
   register: result
   changed_when: result.stdout |search("added bucket")
 
-# Move the host bucket under corresponding root
 - name: Move host bucket under root bucket
   shell: ceph osd crush move {{ ansible_hostname }} root={{ hybrid_pool }}
   register: result

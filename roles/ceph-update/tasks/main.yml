@@ -76,9 +76,7 @@
   when: "'ceph_osds' in group_names"
 
 - name: remove ceph restart flag
-  service_flag:
-    name: ceph
-    state: absent
+  file: dest=/etc/ansible/facts.d/restart_ceph.fact state=absent
 
 # make sure ceph health ok after update
 - name: wait for ceph cluster to be in health ok state

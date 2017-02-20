@@ -432,5 +432,5 @@
   roles:
     - role: ceph-update
       tags: ['ceph', 'ceph-update']
-      when: ceph.enabled|default(false) and service_flag.ceph|default(false)
+      when: ceph.enabled|default(false) and (ansible_local|default({})).restart_ceph|default(false)
   environment: "{{ env_vars|default({}) }}"

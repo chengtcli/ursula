@@ -55,10 +55,12 @@
         (result_ceph_installed_version.rc == 0 and result_ceph_installed_version.stdout < ceph_pure_version)
 
 - name: set ceph restart flag for ceph package upgrade
-  service_flag:
-    name: ceph
-    livetrue: '{{ upgrade_ceph }}'
-  tags: ['ceph-update']
+  copy: dest=/etc/ansible/facts.d/restart_ceph.fact content='true'
+  when: upgrade_ceph
+
+- name: re-read facts after adding custom fact
+  setup: filter=ansible_local
+  when: upgrade_ceph
 
 - name: set flag so that this yml will not exected on the same host
   set_fact:

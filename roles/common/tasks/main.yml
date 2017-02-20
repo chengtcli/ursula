@@ -3,6 +3,9 @@
   hostname: name={{ hostname }}
   when: hostname is defined
 
+- name: create facts.d
+  file: dest=/etc/ansible/facts.d state=directory
+
 - block:
   - name: ubuntu apt source list
     template: src=etc/apt/sources.list dest=/etc/apt/sources.list
