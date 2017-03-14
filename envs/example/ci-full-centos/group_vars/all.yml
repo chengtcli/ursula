@@ -60,17 +60,24 @@ xtradb:
 haproxy:
   stats_group: root
 
+nova:
+  libvirt_type: kvm
+
 heat:
   enabled: True
 
 ironic:
   enabled: False
 
+glance:
+  store_file: true
+
 cinder:
-  enabled: False
+  enabled: true
 
 # we don't enabled ceph server, but nova needs ceph client
 # so we specify ceph client version here
 ceph:
   client_version:
     rhel: 0.94.5
+

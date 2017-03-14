@@ -1,36 +1,18 @@
 ---
-- name: install cinder-data required packages
-  package: name={{ item }}
-  with_items: "{{ cinder.data_pkgs[ursula_os] }}"
-  register: result
-  until: result|succeeded
-  retries: 5
+- include: lvm_integration.yml
+  when: not ceph.enabled
 
-- name: iscsi target framework conf dir
-  file: dest=/etc/tgt/conf.d state=directory
+- include: ceph_integration.yml
+  when: ceph.enabled
 
-- name: tgt config files
-  template: src={{ item.value.src }} dest={{ item.value.dest }} mode=0644
-  with_dict:
-    targets:
-      src: etc/tgt/targets.conf
-      dest: /etc/tgt/targets.conf
-    cinder_tgt:
-      src: etc/tgt/conf.d/cinder_tgt.conf
-      dest: /etc/tgt/conf.d/cinder_tgt.conf
-  notify: restart tgt service
-
-- name: ensure tgt service is running
-  service: name="{{ cinder.tgt_service[ursula_os] }}" state=started
-
-- include: volume_group.yml
-  when: cinder.create_vg|bool and ( cinder.fixed_key is not defined or (cinder.fixed_key is defined and "compute" not in group_names) )
-
-- name: iscsi start
-  service: name="{{ cinder.iscsi_service[ursula_os] }}" state=started
+- name: persistent new backend
+  copy: dest=/etc/ansible/facts.d/persis_cinder_backend.fact
+        content="{{ ceph.enabled|ternary('ceph', 'lvm') }}"
+  register: result_cinder_backend
 
 - name: enable cinder encryption
-  template: src=etc/cinder/cinder.encryption.conf dest=/etc/cinder/cinder.encryption.conf mode=0640
+  template: src=etc/cinder/cinder.encryption.conf
+            dest=/etc/cinder/cinder.encryption.conf mode=0640
             owner=root group=cinder
   notify: restart cinder services
   when: cinder.fixed_key is defined
@@ -100,7 +82,8 @@
     - restart cinder services
     - restart cinder backup service
   when: (code_has_changed | default('False') | bool and upgrade | default('False') | bool) or
-        (ceph.enabled and cephclient_upgraded|default(false))
+        (ceph.enabled and cephclient_upgraded|default(false)) or
+        result_cinder_backend.changed
 
 - meta: flush_handlers
 
