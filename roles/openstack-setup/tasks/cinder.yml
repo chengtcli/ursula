@@ -1,5 +1,5 @@
 ---
-- name: create cinder volume types
+- name: create cinder volume types(ceph backend)
   environment:
     PYTHONPATH: "{{ basevenv_lib_dir|default(omit) }}"
   cinder_volume_type: volume_type={{ item.value.volume_type }}
@@ -13,6 +13,19 @@
     - ceph.enabled
     - item.value.enabled
   with_dict: "{{ ceph_pools | default({}) }}"
+  run_once: true
+
+- name: create cinder volume types(lvm backend)
+  environment:
+    PYTHONPATH: "{{ basevenv_lib_dir|default(omit) }}"
+  cinder_volume_type: volume_type=LVM
+                      auth_url={{ endpoints.auth_uri }}
+                      login_username=admin
+                      login_password={{ secrets.admin_password }}
+                      login_tenant_name=admin
+                      extra_specs="volume_backend_name=lvm"
+                      insecure={{ insecure|default(omit) }}
+  when: not ceph.enabled
   run_once: true
 
 - name: create cinder encryption volume types

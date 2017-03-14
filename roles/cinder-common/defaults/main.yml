@@ -30,16 +30,12 @@ cinder:
     rhel:
       - cryptsetup
       - lvm2
-      - targetcli
       - nbd
-      - iscsi-initiator-utils
+      - scsi-target-utils
       - qemu-kvm-tools
-  iscsi_helper:
-    ubuntu: tgtadm
-    rhel: targetcli
   tgt_service:
     ubuntu: tgt
-    rhel: target
+    rhel: tgtd
   iscsi_service:
     ubuntu: open-iscsi
     rhel: iscsid

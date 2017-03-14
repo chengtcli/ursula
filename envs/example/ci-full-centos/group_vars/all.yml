@@ -60,11 +60,17 @@ xtradb:
 haproxy:
   stats_group: root
 
+nova:
+  libvirt_type: kvm
+
 heat:
   enabled: True
 
 ironic:
   enabled: False
 
+glance:
+  store_file: true
+
 cinder:
-  enabled: False
+  enabled: true

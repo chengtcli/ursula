@@ -59,10 +59,6 @@
     - etype: other
       permission: r
 
-# needs to happen before 'cinder config'
-- include: ceph_integration.yml
-  when: ceph.enabled
-
 - name: error out when swift haproxy vip is not updated
   fail: msg="swift haproxy vip needs to be updated for use with cinder backup"
   when: swift.enabled|bool and (endpoints.swift.haproxy_vip == fqdn)

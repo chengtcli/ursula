@@ -1,33 +1,9 @@
 ---
-- name: install cinder-data required packages
-  package: name={{ item }}
-  with_items: "{{ cinder.data_pkgs[ursula_os] }}"
-  register: result
-  until: result|succeeded
-  retries: 5
+- include: lvm_integration.yml
+  when: not ceph.enabled
 
-- name: iscsi target framework conf dir
-  file: dest=/etc/tgt/conf.d state=directory
-
-- name: tgt config files
-  template: src={{ item.value.src }} dest={{ item.value.dest }} mode=0644
-  with_dict:
-    targets:
-      src: etc/tgt/targets.conf
-      dest: /etc/tgt/targets.conf
-    cinder_tgt:
-      src: etc/tgt/conf.d/cinder_tgt.conf
-      dest: /etc/tgt/conf.d/cinder_tgt.conf
-  notify: restart tgt service
-
-- name: ensure tgt service is running
-  service: name="{{ cinder.tgt_service[ursula_os] }}" state=started
-
-- include: volume_group.yml
-  when: cinder.create_vg|bool and ( cinder.fixed_key is not defined or (cinder.fixed_key is defined and "compute" not in group_names) )
-
-- name: iscsi start
-  service: name="{{ cinder.iscsi_service[ursula_os] }}" state=started
+- include: ceph_integration.yml
+  when: ceph.enabled
 
 - name: enable cinder encryption
   template: src=etc/cinder/cinder.encryption.conf dest=/etc/cinder/cinder.encryption.conf mode=0640
