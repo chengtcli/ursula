@@ -11,6 +11,12 @@ cinder:
   default_backend:
   backends: []
   # determined automatically by Ceph roles
+
+  # backend   ->      available volume_type
+  # lvm       ->      LVM
+  # ceph      ->      CEPH_SSD, CEPH_HYBRID
+  # if we don't define default_volume_type, ursula will choose one by itself
+  #default_volume_type: xx # xx is one of ['LVM', 'CEPH_SSD', 'CEPH_HYBRID']
   api_workers: 5
   state_path: "{{ state_path_base }}/cinder"
   volume_type: file

@@ -75,6 +75,9 @@ glance:
 cinder:
   enabled: true
 
+lvm:
+  enabled: true
+
 # we don't enabled ceph server, but nova needs ceph client
 # so we specify ceph client version here
 ceph:

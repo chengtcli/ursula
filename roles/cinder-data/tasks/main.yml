@@ -1,14 +1,9 @@
 ---
 - include: lvm_integration.yml
-  when: not ceph.enabled
+  when: lvm.enabled
 
 - include: ceph_integration.yml
   when: ceph.enabled
-
-- name: persistent new backend
-  copy: dest=/etc/ansible/facts.d/persis_cinder_backend.fact
-        content="{{ ceph.enabled|ternary('ceph', 'lvm') }}"
-  register: result_cinder_backend
 
 - name: enable cinder encryption
   template: src=etc/cinder/cinder.encryption.conf
@@ -82,8 +77,7 @@
     - restart cinder services
     - restart cinder backup service
   when: (code_has_changed | default('False') | bool and upgrade | default('False') | bool) or
-        (ceph.enabled and cephclient_upgraded|default(false)) or
-        result_cinder_backend.changed
+        (ceph.enabled and cephclient_upgraded|default(false))
 
 - meta: flush_handlers
 

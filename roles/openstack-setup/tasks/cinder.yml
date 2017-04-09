@@ -25,7 +25,7 @@
                       login_tenant_name=admin
                       extra_specs="volume_backend_name=lvm"
                       insecure={{ insecure|default(omit) }}
-  when: not ceph.enabled
+  when: lvm.enabled
   run_once: true
 
 - name: create cinder encryption volume types

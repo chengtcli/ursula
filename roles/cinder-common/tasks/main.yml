@@ -63,6 +63,14 @@
   fail: msg="swift haproxy vip needs to be updated for use with cinder backup"
   when: swift.enabled|bool and (endpoints.swift.haproxy_vip == fqdn)
 
+# used in cinder.conf
+- name: fetch contents of uuid file
+  slurp: path=/etc/ceph/cinder_uuid
+  run_once: true
+  delegate_to: "{{ groups['ceph_monitors'][0] }}"
+  register: cinder_uuid_file
+  when: ceph.enabled
+
 - name: cinder config
   template: src={{ item }} dest=/etc/cinder mode=0640
             owner=root group=cinder

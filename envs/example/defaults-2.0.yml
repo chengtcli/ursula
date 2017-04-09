@@ -194,6 +194,9 @@ ceph:
   #  - sdd
   #bcache_ssd_device: sdg
 
+lvm:
+  enabled: false
+
 cinder:
   enabled: True
   enabled_backends: [] # rbd_volumes for Ceph

@@ -21,7 +21,7 @@
   notify: restart tgt service
 
 - name: ensure tgt service is running
-  service: name="{{ cinder.tgt_service[ursula_os] }}" state=started
+  service: name="{{ cinder.tgt_service[ursula_os] }}" state=started enabled=true
 
 # TODO: allow for device-backed VGs in addition to file-backed VGs
 - block:
@@ -38,4 +38,4 @@
     - cinder.fixed_key is not defined or (cinder.fixed_key is defined and "compute" not in group_names)
 
 - name: iscsi start
-  service: name="{{ cinder.iscsi_service[ursula_os] }}" state=started
+  service: name="{{ cinder.iscsi_service[ursula_os] }}" state=started enabled=true

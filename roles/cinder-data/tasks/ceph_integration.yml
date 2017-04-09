@@ -31,10 +31,3 @@
     mode: 0644
     owner: cinder
     group: cinder
-
-# used in cinder.conf
-- name: fetch contents of uuid file
-  slurp: path=/etc/ceph/cinder_uuid
-  run_once: true
-  delegate_to: "{{ groups['ceph_monitors'][0] }}"
-  register: cinder_uuid_file

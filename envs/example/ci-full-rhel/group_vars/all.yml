@@ -78,5 +78,8 @@ ironic:
 glance:
   store_file: true
 
+lvm:
+  enabled: true
+
 cinder:
   enabled: true

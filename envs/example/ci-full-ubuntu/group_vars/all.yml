@@ -8,6 +8,10 @@ undercloud_cidr:
 ceph:
   monitor_interface: eth0
   enabled: false
+
+lvm:
+  enabled: true
+
 glance:
   store_file: True
 primary_interface: ansible_eth0
@@ -75,4 +79,4 @@ ironic:
   enabled: False
 
 cinder:
-  enabled: false
+  enabled: true
