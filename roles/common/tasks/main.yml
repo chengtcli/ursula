@@ -1,4 +1,10 @@
 ---
+# TODO: we should remvoe this task once hammer.list is removed from all envs.
+- name: remove ceph hammer repo from /etc/apt/sources.list.d
+  file: path=/etc/apt/sources.list.d/apt_mirror_openstack_bbg_ceph_debian_hammer.list
+        state=absent
+  when: ursula_os == 'ubuntu'
+
 - name: set hostname
   hostname: name={{ hostname }}
   when: hostname is defined
